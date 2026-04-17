@@ -1,0 +1,62 @@
+from __future__ import annotations
+
+from threading import RLock
+from uuid import uuid4
+
+from fastapi import WebSocket
+from starlette.websockets import WebSocketState
+
+from app.models.schemas import HarmonyAppWebSocketMessage, now_timestamp_ms
+
+
+class HarmonyConnectionManager:
+    def __init__(self) -> None:
+        self._sessions: dict[str, WebSocket] = {}
+        self._lock = RLock()
+
+    def register(self, websocket: WebSocket) -> str:
+        session_id = uuid4().hex[:12]
+        with self._lock:
+            self._sessions[session_id] = websocket
+        return session_id
+
+    def unregister(self, session_id: str) -> None:
+        with self._lock:
+            self._sessions.pop(session_id, None)
+
+    def get_connected_count(self) -> int:
+        self._cleanup_closed_sessions()
+        with self._lock:
+            return len(self._sessions)
+
+    async def send_connection_success_notification(self) -> int:
+        message = HarmonyAppWebSocketMessage(
+            type="connection_success",
+            message="连接成功",
+            timestamp=now_timestamp_ms(),
+        )
+        return await self.broadcast(message)
+
+    async def broadcast(self, message: HarmonyAppWebSocketMessage) -> int:
+        self._cleanup_closed_sessions()
+        with self._lock:
+            session_items = list(self._sessions.items())
+
+        delivered_count = 0
+        for session_id, websocket in session_items:
+            try:
+                await websocket.send_json(message.model_dump(exclude_none=True))
+                delivered_count += 1
+            except Exception:
+                self.unregister(session_id)
+        return delivered_count
+
+    def _cleanup_closed_sessions(self) -> None:
+        with self._lock:
+            closed_ids = [
+                session_id
+                for session_id, websocket in self._sessions.items()
+                if websocket.client_state != WebSocketState.CONNECTED
+            ]
+            for session_id in closed_ids:
+                self._sessions.pop(session_id, None)
