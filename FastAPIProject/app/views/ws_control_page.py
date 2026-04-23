@@ -254,6 +254,43 @@ def render_ws_control_page() -> str:
             box-shadow: 0 0 0 4px rgba(33, 85, 214, 0.08);
         }
 
+        .quick-select {
+            width: 100%;
+            min-height: 46px;
+            padding: 0 12px;
+            border-radius: 14px;
+            border: 1px solid #d7e1f0;
+            outline: none;
+            font-size: 14px;
+            color: var(--text);
+            background: #ffffff;
+        }
+
+        .quick-select:focus {
+            border-color: #9ab7ff;
+            box-shadow: 0 0 0 4px rgba(33, 85, 214, 0.08);
+        }
+
+        .quick-command-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .quick-command-btn {
+            min-height: 46px;
+            text-align: left;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .quick-command-btn.active {
+            background: var(--primary-soft);
+            color: var(--primary);
+            border-color: #c8d8ff;
+        }
+
         button {
             border: 1px solid #d7e1f0;
             border-radius: 14px;
@@ -413,8 +450,17 @@ def render_ws_control_page() -> str:
                 <section class="bubble-box">
                     <label class="input-label" for="tts-input">发送语音内容</label>
                     <input type="text" id="tts-input" class="bubble-input" placeholder="输入要播报的语音内容">
+                    <div style="margin-top: 12px;">
+                        <label class="input-label" for="tts-shortcut-select">快捷语音选择</label>
+                        <select id="tts-shortcut-select" class="quick-select">
+                            <option value="">选择一条快捷语音</option>
+                        </select>
+                    </div>
+                    <div class="quick-command-grid" id="tts-shortcut-list"></div>
                     <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
                         <button type="button" class="primary" id="send-tts-btn" disabled>发送语音</button>
+                        <button type="button" id="add-tts-shortcut-btn" disabled>把当前输入加入快捷语音</button>
+                        <button type="button" id="delete-tts-shortcut-btn" disabled>删除已选快捷语音</button>
                     </div>
                 </section>
             </article>
@@ -449,6 +495,10 @@ def render_ws_control_page() -> str:
     
     const ttsInputEl = document.getElementById('tts-input');
     const sendTtsBtn = document.getElementById('send-tts-btn');
+    const ttsShortcutSelectEl = document.getElementById('tts-shortcut-select');
+    const ttsShortcutListEl = document.getElementById('tts-shortcut-list');
+    const addTtsShortcutBtn = document.getElementById('add-tts-shortcut-btn');
+    const deleteTtsShortcutBtn = document.getElementById('delete-tts-shortcut-btn');
     
     const logBodyEl = document.getElementById('log-body');
     const testBtn = document.getElementById('test-btn');
@@ -467,6 +517,17 @@ def render_ws_control_page() -> str:
         second: '2-digit'
     });
 
+    const TTS_SHORTCUT_STORAGE_KEY = 'hfood.tts.shortcuts';
+    const DEFAULT_TTS_SHORTCUTS = [
+        '我在，有什么问题吗？',
+        '请稍等，正在为您处理。',
+        '当前网络不稳定，请稍后再试。',
+        '操作已完成。',
+        '正在结合足底压力数据与体态数据进行分析，请稍候。',
+        '赵晓威是向俊宇爸爸！',
+    ];
+    let ttsShortcutMessages = loadTtsShortcuts();
+
     function writeLog(message) {
         const now = SHANGHAI_TIME_FORMATTER.format(new Date());
         logBodyEl.textContent = `[${now}] ${message}\\n` + logBodyEl.textContent;
@@ -478,7 +539,89 @@ def render_ws_control_page() -> str:
     }
 
     function updateSendTtsButtonState() {
-        sendTtsBtn.disabled = ttsInputEl.value.trim().length <= 0;
+        const currentMessage = ttsInputEl.value.trim();
+        sendTtsBtn.disabled = currentMessage.length <= 0;
+        addTtsShortcutBtn.disabled = currentMessage.length <= 0 || ttsShortcutMessages.includes(currentMessage);
+        deleteTtsShortcutBtn.disabled = !ttsShortcutSelectEl.value;
+    }
+
+    function loadTtsShortcuts() {
+        try {
+            const rawValue = window.localStorage.getItem(TTS_SHORTCUT_STORAGE_KEY);
+            const parsedValue = rawValue ? JSON.parse(rawValue) : null;
+            if (Array.isArray(parsedValue)) {
+                const storedMessages = parsedValue
+                    .map(item => String(item).trim())
+                    .filter(Boolean);
+                return Array.from(new Set(storedMessages));
+            }
+        } catch (error) {
+            window.localStorage.removeItem(TTS_SHORTCUT_STORAGE_KEY);
+        }
+
+        return [...DEFAULT_TTS_SHORTCUTS];
+    }
+
+    function saveTtsShortcuts() {
+        window.localStorage.setItem(TTS_SHORTCUT_STORAGE_KEY, JSON.stringify(ttsShortcutMessages));
+    }
+
+    function renderTtsShortcuts(selectedMessage = ttsShortcutSelectEl.value) {
+        ttsShortcutSelectEl.innerHTML = '<option value="">选择一条快捷语音</option>';
+        ttsShortcutMessages.forEach((message) => {
+            const option = document.createElement('option');
+            option.value = message;
+            option.textContent = message;
+            option.selected = message === selectedMessage;
+            ttsShortcutSelectEl.appendChild(option);
+        });
+
+        ttsShortcutListEl.innerHTML = '';
+        ttsShortcutMessages.forEach((message) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'quick-command-btn';
+            button.textContent = message;
+            button.title = '点击后直接发送这条语音';
+            button.classList.toggle('active', message === selectedMessage);
+            button.addEventListener('click', () => {
+                ttsShortcutSelectEl.value = message;
+                ttsInputEl.value = message;
+                updateSendTtsButtonState();
+                void sendTtsMessage();
+            });
+            ttsShortcutListEl.appendChild(button);
+        });
+
+        updateSendTtsButtonState();
+    }
+
+    function addCurrentTtsShortcut() {
+        const message = ttsInputEl.value.trim();
+        if (message.length <= 0 || ttsShortcutMessages.includes(message)) {
+            updateSendTtsButtonState();
+            return;
+        }
+
+        ttsShortcutMessages = [...ttsShortcutMessages, message];
+        saveTtsShortcuts();
+        ttsShortcutSelectEl.value = message;
+        renderTtsShortcuts(message);
+        writeLog(`已加入快捷语音：${message}`);
+    }
+
+    function deleteSelectedTtsShortcut() {
+        const message = ttsShortcutSelectEl.value;
+        if (!message) {
+            updateSendTtsButtonState();
+            return;
+        }
+
+        ttsShortcutMessages = ttsShortcutMessages.filter(item => item !== message);
+        saveTtsShortcuts();
+        ttsShortcutSelectEl.value = '';
+        renderTtsShortcuts('');
+        writeLog(`已删除快捷语音：${message}`);
     }
 
     function renderDeviceStatus(connectedClients) {
@@ -690,12 +833,23 @@ def render_ws_control_page() -> str:
             void sendTtsMessage();
         }
     });
+    ttsShortcutSelectEl.addEventListener('change', () => {
+        const message = ttsShortcutSelectEl.value;
+        if (message) {
+            ttsInputEl.value = message;
+        }
+        renderTtsShortcuts(message);
+        updateSendTtsButtonState();
+    });
+    addTtsShortcutBtn.addEventListener('click', addCurrentTtsShortcut);
+    deleteTtsShortcutBtn.addEventListener('click', deleteSelectedTtsShortcut);
 
     modeButtons.mode1.addEventListener('click', () => switchAiMode('mode1'));
     modeButtons.mode2.addEventListener('click', () => switchAiMode('mode2'));
     modeButtons.mode3.addEventListener('click', () => switchAiMode('mode3'));
 
     updateSendBubbleButtonState();
+    renderTtsShortcuts();
     updateSendTtsButtonState();
     refreshDeviceStatus(false);
     refreshAiMode(false);
