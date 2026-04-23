@@ -52,3 +52,7 @@ class HarmonyAppWebSocketMessage(BaseModel):
     mode: str | None = None
     modeLabel: str | None = None
     modeDescription: str | None = None
+
+
+class BubbleMessageRequest(BaseModel):
+    message: str

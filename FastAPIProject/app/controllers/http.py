@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.container import AppContainer, get_container_from_request
-from app.models.schemas import ApiResponse
+from app.models.schemas import ApiResponse, BubbleMessageRequest
 from app.views.ws_control_page import render_ws_control_page
 
 router = APIRouter()
@@ -46,6 +46,56 @@ async def notify_connected(
     }
     message = (
         "connection success notification sent"
+        if delivered_count > 0
+        else "no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/ws/harmony/notify-message", response_model=ApiResponse)
+async def notify_message(
+    request: BubbleMessageRequest,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    message_text = request.message.strip()
+    if message_text == "":
+        return ApiResponse.error(400, "message cannot be empty")
+
+    connected_clients = container.connection_manager.get_connected_count()
+    delivered_count = await container.connection_manager.send_app_bubble(message_text)
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "message": message_text,
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "app bubble notification sent"
+        if delivered_count > 0
+        else "no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/ws/harmony/notify-tts", response_model=ApiResponse)
+async def notify_tts(
+    request: BubbleMessageRequest,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    message_text = request.message.strip()
+    if message_text == "":
+        return ApiResponse.error(400, "message cannot be empty")
+
+    connected_clients = container.connection_manager.get_connected_count()
+    delivered_count = await container.connection_manager.send_app_tts(message_text)
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "message": message_text,
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "app tts notification sent"
         if delivered_count > 0
         else "no Harmony app websocket clients connected"
     )

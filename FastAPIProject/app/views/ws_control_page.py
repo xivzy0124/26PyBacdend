@@ -43,10 +43,23 @@ def render_ws_control_page() -> str:
         }
 
         .shell {
-            max-width: 1100px;
+            max-width: 1400px;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .main-layout {
             display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
+            grid-template-columns: 380px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .extensions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 20px;
         }
 
@@ -97,11 +110,12 @@ def render_ws_control_page() -> str:
             color: var(--muted);
             line-height: 1.8;
             font-size: 15px;
+            max-width: 800px;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 14px;
         }
 
@@ -140,7 +154,7 @@ def render_ws_control_page() -> str:
 
         .section-title {
             margin: 0;
-            font-size: 22px;
+            font-size: 20px;
         }
 
         .section-desc {
@@ -152,8 +166,10 @@ def render_ws_control_page() -> str:
 
         .status-box,
         .mode-box,
+        .bubble-box,
         .action-box,
-        .log-box {
+        .log-box,
+        .extension-box {
             border: 1px solid #e7edf6;
             border-radius: 18px;
             padding: 18px;
@@ -214,6 +230,30 @@ def render_ws_control_page() -> str:
             margin-top: 14px;
         }
 
+        .input-label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .bubble-input {
+            width: 100%;
+            height: 52px;
+            padding: 0 14px;
+            border-radius: 14px;
+            border: 1px solid #d7e1f0;
+            outline: none;
+            font-size: 14px;
+            color: var(--text);
+            background: #ffffff;
+        }
+
+        .bubble-input:focus {
+            border-color: #9ab7ff;
+            box-shadow: 0 0 0 4px rgba(33, 85, 214, 0.08);
+        }
+
         button {
             border: 1px solid #d7e1f0;
             border-radius: 14px;
@@ -250,7 +290,7 @@ def render_ws_control_page() -> str:
 
         button:disabled {
             opacity: 0.65;
-            cursor: wait;
+            cursor: not-allowed;
             transform: none;
         }
 
@@ -278,12 +318,12 @@ def render_ws_control_page() -> str:
             font-size: 13px;
         }
 
-        @media (max-width: 920px) {
+        @media (max-width: 1024px) {
             body {
                 padding: 18px;
             }
 
-            .shell {
+            .main-layout {
                 grid-template-columns: 1fr;
             }
 
@@ -300,8 +340,8 @@ def render_ws_control_page() -> str:
         <div class="eyebrow">HFOOD CONTROL</div>
         <h1>应用联调控制台</h1>
         <p class="subtitle">
-            这个页面负责两件事：一是检查鸿蒙应用 websocket 是否在线，二是切换 AI 卡片当前运行模式。
-            切换成功后，鸿蒙 AI 页面右上角会实时更新为模式1、模式2或模式3，点击“开启分析”会按当前模式播放本地文案。
+            这个页面负责三件事：检查鸿蒙应用 WebSocket 是否在线、切换 AI 当前运行模式、以及向平板发送任意文本气泡或语音。
+            如果鸿蒙端在线，发送的内容会直接以应用内气泡或语音形式响应。
         </p>
 
         <div class="grid">
@@ -318,43 +358,79 @@ def render_ws_control_page() -> str:
         </div>
     </section>
 
-    <aside class="card panel">
-        <div>
-            <h2 class="section-title">控制操作</h2>
-            <p class="section-desc">先看设备是否在线，再切 AI 模式，最后可以点按钮让鸿蒙应用弹出 websocket 连接成功气泡。</p>
+    <div class="main-layout">
+        <aside class="card panel">
+            <div>
+                <h2 class="section-title">核心操作面板</h2>
+                <p class="section-desc">检查设备状态、切换 AI 模式，或发送文本气泡。</p>
+            </div>
+
+            <section class="status-box">
+                <div class="row">
+                    <div class="status-pill offline" id="device-status-pill">暂无设备在线</div>
+                    <div class="muted">路径：<span id="socket-path">/ws/harmony-app</span></div>
+                </div>
+            </section>
+
+            <section class="mode-box">
+                <div class="row">
+                    <div class="mode-pill mode1" id="mode-pill">模式1</div>
+                    <div class="muted">当前 AI 模式</div>
+                </div>
+                <div class="mode-desc" id="mode-description">鸿蒙端按模式1本地文案做模拟流式输出</div>
+                <div class="action-grid">
+                    <button type="button" id="mode-mode1">模式1</button>
+                    <button type="button" id="mode-mode2">模式2</button>
+                    <button type="button" id="mode-mode3">模式3</button>
+                </div>
+            </section>
+
+            <section class="bubble-box">
+                <label class="input-label" for="bubble-input">发送应用内气泡</label>
+                <input type="text" id="bubble-input" class="bubble-input" placeholder="输入什么，鸿蒙端就弹什么">
+                <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
+                    <button type="button" class="primary" id="send-bubble-btn" disabled>发送气泡</button>
+                    <button type="button" id="test-btn">发送“连接成功”气泡</button>
+                </div>
+            </section>
+
+            <section class="action-box">
+                <button type="button" id="refresh-btn" style="width: 100%;">刷新状态信息</button>
+            </section>
+
+            <section class="log-box">
+                <pre class="log-body" id="log-body">系统已就绪，等待操作...</pre>
+            </section>
+        </aside>
+
+        <div class="extensions-grid">
+            
+            <article class="card panel">
+                <div>
+                    <h2 class="section-title">语音播报控制</h2>
+                    <p class="section-desc">在此处输入文本并发送，设备将直接进行语音播报。</p>
+                </div>
+                <section class="bubble-box">
+                    <label class="input-label" for="tts-input">发送语音内容</label>
+                    <input type="text" id="tts-input" class="bubble-input" placeholder="输入要播报的语音内容">
+                    <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
+                        <button type="button" class="primary" id="send-tts-btn" disabled>发送语音</button>
+                    </div>
+                </section>
+            </article>
+
+            <article class="card panel">
+                <div>
+                    <h2 class="section-title">其他扩展功能</h2>
+                    <p class="section-desc">后续可以在这里添加大数据分析图表或其他卡片。</p>
+                </div>
+                <section class="extension-box" style="min-height: 150px; display: flex; align-items: center; justify-content: center; color: var(--muted);">
+                    暂无内容
+                </section>
+            </article>
+
         </div>
-
-        <section class="status-box">
-            <div class="row">
-                <div class="status-pill offline" id="device-status-pill">暂无设备在线</div>
-                <div class="muted">WebSocket 路径：<span id="socket-path">/ws/harmony-app</span></div>
-            </div>
-        </section>
-
-        <section class="mode-box">
-            <div class="row">
-                <div class="mode-pill mode1" id="mode-pill">模式1</div>
-                <div class="muted">当前 AI 模式</div>
-            </div>
-            <div class="mode-desc" id="mode-description">鸿蒙端按模式1本地文案做模拟流式输出</div>
-            <div class="action-grid">
-                <button type="button" id="mode-mode1">模式1</button>
-                <button type="button" id="mode-mode2">模式2</button>
-                <button type="button" id="mode-mode3">模式3</button>
-            </div>
-        </section>
-
-        <section class="action-box">
-            <div class="row">
-                <button type="button" class="primary" id="test-btn">发送"连接成功"气泡</button>
-                <button type="button" id="refresh-btn">刷新状态</button>
-            </div>
-        </section>
-
-        <section class="log-box">
-            <pre class="log-body" id="log-body">系统已就绪，等待操作...</pre>
-        </section>
-    </aside>
+    </div>
 </main>
 
 <script>
@@ -366,6 +442,14 @@ def render_ws_control_page() -> str:
     const modeDescriptionLargeEl = document.getElementById('mode-description-large');
     const modePillEl = document.getElementById('mode-pill');
     const modeDescriptionEl = document.getElementById('mode-description');
+    
+    // 输入框与按钮分离
+    const bubbleInputEl = document.getElementById('bubble-input');
+    const sendBubbleBtn = document.getElementById('send-bubble-btn');
+    
+    const ttsInputEl = document.getElementById('tts-input');
+    const sendTtsBtn = document.getElementById('send-tts-btn');
+    
     const logBodyEl = document.getElementById('log-body');
     const testBtn = document.getElementById('test-btn');
     const refreshBtn = document.getElementById('refresh-btn');
@@ -386,6 +470,15 @@ def render_ws_control_page() -> str:
     function writeLog(message) {
         const now = SHANGHAI_TIME_FORMATTER.format(new Date());
         logBodyEl.textContent = `[${now}] ${message}\\n` + logBodyEl.textContent;
+    }
+
+    // 分别控制气泡和语音按钮的激活状态
+    function updateSendBubbleButtonState() {
+        sendBubbleBtn.disabled = bubbleInputEl.value.trim().length <= 0;
+    }
+
+    function updateSendTtsButtonState() {
+        sendTtsBtn.disabled = ttsInputEl.value.trim().length <= 0;
     }
 
     function renderDeviceStatus(connectedClients) {
@@ -497,17 +590,116 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function sendBubbleMessage() {
+        const message = bubbleInputEl.value.trim();
+        if (message.length <= 0) {
+            updateSendBubbleButtonState();
+            return;
+        }
+
+        sendBubbleBtn.disabled = true;
+        writeLog(`正在发送应用内气泡：${message}`);
+
+        try {
+            const response = await fetch('/api/ws/harmony/notify-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`发送气泡失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            writeLog(`气泡发送完成，内容“${data.message || message}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+            bubbleInputEl.value = '';
+            updateSendBubbleButtonState();
+        } catch (error) {
+            writeLog(`发送气泡失败：${error}`);
+        } finally {
+            updateSendBubbleButtonState();
+        }
+    }
+
+    async function sendTtsMessage() {
+        const message = ttsInputEl.value.trim();
+        if (message.length <= 0) {
+            updateSendTtsButtonState();
+            return;
+        }
+
+        sendTtsBtn.disabled = true;
+        writeLog(`正在发送语音播报：${message}`);
+
+        try {
+            const response = await fetch('/api/ws/harmony/notify-tts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`发送语音失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            writeLog(
+                `语音发送完成，内容“${data.message || message}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`
+            );
+            ttsInputEl.value = '';
+            updateSendTtsButtonState();
+        } catch (error) {
+            writeLog(`发送语音失败：${error}`);
+        } finally {
+            updateSendTtsButtonState();
+        }
+    }
+
     refreshBtn.addEventListener('click', async () => {
         await refreshDeviceStatus(false);
         await refreshAiMode(false);
     });
     testBtn.addEventListener('click', testConnection);
+    
+    // 分别绑定气泡和语音的点击事件
+    sendBubbleBtn.addEventListener('click', sendBubbleMessage);
+    sendTtsBtn.addEventListener('click', sendTtsMessage);
+    
+    // 分别绑定气泡和语音的输入监听和回车快捷键
+    bubbleInputEl.addEventListener('input', updateSendBubbleButtonState);
+    bubbleInputEl.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            void sendBubbleMessage();
+        }
+    });
+
+    ttsInputEl.addEventListener('input', updateSendTtsButtonState);
+    ttsInputEl.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            void sendTtsMessage();
+        }
+    });
+
     modeButtons.mode1.addEventListener('click', () => switchAiMode('mode1'));
     modeButtons.mode2.addEventListener('click', () => switchAiMode('mode2'));
     modeButtons.mode3.addEventListener('click', () => switchAiMode('mode3'));
 
+    updateSendBubbleButtonState();
+    updateSendTtsButtonState();
     refreshDeviceStatus(false);
     refreshAiMode(false);
+    
     window.setInterval(() => {
         refreshDeviceStatus(true);
         refreshAiMode(true);
