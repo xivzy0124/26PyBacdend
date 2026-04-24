@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 def render_ws_control_page() -> str:
     return """<!DOCTYPE html>
 <html lang="zh-CN">
@@ -444,12 +443,12 @@ def render_ws_control_page() -> str:
             
             <article class="card panel">
                 <div>
-                    <h2 class="section-title">语音播报控制</h2>
-                    <p class="section-desc">在此处输入文本并发送，设备将直接进行语音播报。</p>
+                    <h2 class="section-title">鸿蒙端 TTS 语音</h2>
+                    <p class="section-desc">这里发送的是鸿蒙设备本地 TTS，会直接调用设备侧语音播报能力。</p>
                 </div>
                 <section class="bubble-box">
-                    <label class="input-label" for="tts-input">发送语音内容</label>
-                    <input type="text" id="tts-input" class="bubble-input" placeholder="输入要播报的语音内容">
+                    <label class="input-label" for="tts-input">发送鸿蒙 TTS 内容</label>
+                    <input type="text" id="tts-input" class="bubble-input" placeholder="输入要让鸿蒙端本地 TTS 播报的内容">
                     <div style="margin-top: 12px;">
                         <label class="input-label" for="tts-shortcut-select">快捷语音选择</label>
                         <select id="tts-shortcut-select" class="quick-select">
@@ -458,7 +457,7 @@ def render_ws_control_page() -> str:
                     </div>
                     <div class="quick-command-grid" id="tts-shortcut-list"></div>
                     <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
-                        <button type="button" class="primary" id="send-tts-btn" disabled>发送语音</button>
+                        <button type="button" class="primary" id="send-tts-btn" disabled>发送鸿蒙 TTS</button>
                         <button type="button" id="add-tts-shortcut-btn" disabled>把当前输入加入快捷语音</button>
                         <button type="button" id="delete-tts-shortcut-btn" disabled>删除已选快捷语音</button>
                     </div>
@@ -467,11 +466,22 @@ def render_ws_control_page() -> str:
 
             <article class="card panel">
                 <div>
-                    <h2 class="section-title">其他扩展功能</h2>
-                    <p class="section-desc">后续可以在这里添加大数据分析图表或其他卡片。</p>
+                    <h2 class="section-title">讯飞在线语音</h2>
+                    <p class="section-desc">这里发送的是讯飞在线语音合成，会先由后端生成 mp3，再推送给鸿蒙端播放。</p>
                 </div>
-                <section class="extension-box" style="min-height: 150px; display: flex; align-items: center; justify-content: center; color: var(--muted);">
-                    暂无内容
+                <section class="bubble-box">
+                    <label class="input-label" for="online-tts-input">发送讯飞在线语音内容</label>
+                    <input type="text" id="online-tts-input" class="bubble-input" placeholder="输入要让讯飞在线语音播报的内容">
+                    <div style="margin-top: 12px;">
+                        <label class="input-label" for="online-tts-shortcut-select">讯飞默认文本</label>
+                        <select id="online-tts-shortcut-select" class="quick-select">
+                            <option value="">选择一条讯飞默认文本</option>
+                        </select>
+                    </div>
+                    <div class="quick-command-grid" id="online-tts-shortcut-list"></div>
+                    <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
+                        <button type="button" class="primary" id="send-online-tts-btn" disabled>发送讯飞在线语音</button>
+                    </div>
                 </section>
             </article>
 
@@ -495,6 +505,10 @@ def render_ws_control_page() -> str:
     
     const ttsInputEl = document.getElementById('tts-input');
     const sendTtsBtn = document.getElementById('send-tts-btn');
+    const onlineTtsInputEl = document.getElementById('online-tts-input');
+    const sendOnlineTtsBtn = document.getElementById('send-online-tts-btn');
+    const onlineTtsShortcutSelectEl = document.getElementById('online-tts-shortcut-select');
+    const onlineTtsShortcutListEl = document.getElementById('online-tts-shortcut-list');
     const ttsShortcutSelectEl = document.getElementById('tts-shortcut-select');
     const ttsShortcutListEl = document.getElementById('tts-shortcut-list');
     const addTtsShortcutBtn = document.getElementById('add-tts-shortcut-btn');
@@ -526,7 +540,21 @@ def render_ws_control_page() -> str:
         '正在结合足底压力数据与体态数据进行分析，请稍候。',
         '赵晓威是向俊宇爸爸！',
     ];
+    
+    // 修复了这里的乱码，填入了相关的测试文本
+    const DEFAULT_ONLINE_TTS_SHORTCUTS = [
+        '欢迎使用 Hfood 智能点餐系统。',
+        '您的订单已确认，后厨正在准备中。',
+        '当前网络连接正常，设备在线。',
+        '讯飞在线语音合成测试成功。',
+        '足底压力数据采集中，请保持站立。',
+        '设备电量充足，运行状态良好。'
+    ];
     let ttsShortcutMessages = loadTtsShortcuts();
+    let onlineTtsRuntimeConfig = {
+        activeAccountName: '',
+        defaultVcn: 'xiaoyan'
+    };
 
     function writeLog(message) {
         const now = SHANGHAI_TIME_FORMATTER.format(new Date());
@@ -543,6 +571,50 @@ def render_ws_control_page() -> str:
         sendTtsBtn.disabled = currentMessage.length <= 0;
         addTtsShortcutBtn.disabled = currentMessage.length <= 0 || ttsShortcutMessages.includes(currentMessage);
         deleteTtsShortcutBtn.disabled = !ttsShortcutSelectEl.value;
+    }
+
+    function updateSendOnlineTtsButtonState() {
+        sendOnlineTtsBtn.disabled = onlineTtsInputEl.value.trim().length <= 0;
+    }
+
+    function renderOnlineTtsVoiceOptions(config) {
+        onlineTtsRuntimeConfig = {
+            activeAccountName: (config && config.activeAccountName) || '',
+            defaultVcn: (config && config.defaultVcn) || 'xiaoyan'
+        };
+        renderOnlineTtsShortcuts();
+    }
+
+    function renderOnlineTtsShortcuts(selectedMessage = onlineTtsShortcutSelectEl.value) {
+        // 修复了这里的乱码
+        onlineTtsShortcutSelectEl.innerHTML = '<option value="">请选择一条讯飞默认文本</option>';
+        DEFAULT_ONLINE_TTS_SHORTCUTS.forEach((message) => {
+            const option = document.createElement('option');
+            option.value = message;
+            option.textContent = message;
+            option.selected = message === selectedMessage;
+            onlineTtsShortcutSelectEl.appendChild(option);
+        });
+
+        onlineTtsShortcutListEl.innerHTML = '';
+        DEFAULT_ONLINE_TTS_SHORTCUTS.forEach((message) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'quick-command-btn';
+            button.textContent = message;
+            // 修复了这里的乱码
+            button.title = '点击后直接发送这条在线语音';
+            button.classList.toggle('active', message === selectedMessage);
+            button.addEventListener('click', () => {
+                onlineTtsShortcutSelectEl.value = message;
+                onlineTtsInputEl.value = message;
+                updateSendOnlineTtsButtonState();
+                void sendOnlineTtsMessage();
+            });
+            onlineTtsShortcutListEl.appendChild(button);
+        });
+
+        updateSendOnlineTtsButtonState();
     }
 
     function loadTtsShortcuts() {
@@ -690,6 +762,23 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function refreshOnlineTtsConfig(silent = true) {
+        try {
+            const response = await fetch('/api/tts/online/config', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            const data = result.data || {};
+            renderOnlineTtsVoiceOptions(data);
+            if (!silent && data.activeAccountName) {
+                writeLog(`在线语音配置已刷新，当前账号：${data.activeAccountName}，默认音色：${data.defaultVcn || 'xiaoyan'}。`);
+            }
+        } catch (error) {
+            writeLog(`在线语音配置刷新失败：${error}`);
+        }
+    }
+
     async function switchAiMode(mode) {
         const buttons = Object.values(modeButtons);
         buttons.forEach(button => button.disabled = true);
@@ -807,15 +896,57 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function sendOnlineTtsMessage() {
+        const message = onlineTtsInputEl.value.trim();
+        if (message.length <= 0) {
+            updateSendOnlineTtsButtonState();
+            return;
+        }
+
+        sendOnlineTtsBtn.disabled = true;
+        writeLog(`正在发送在线语音播报：${message}`);
+
+        try {
+            const response = await fetch('/api/ws/harmony/notify-online-tts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message,
+                })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`发送在线语音失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            writeLog(
+                `在线语音发送完成，内容“${data.message || message}”，音色 ${data.voiceName || 'xiaoyan'}，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`
+            );
+            onlineTtsInputEl.value = '';
+            updateSendOnlineTtsButtonState();
+        } catch (error) {
+            writeLog(`发送在线语音失败：${error}`);
+        } finally {
+            updateSendOnlineTtsButtonState();
+        }
+    }
+
     refreshBtn.addEventListener('click', async () => {
         await refreshDeviceStatus(false);
         await refreshAiMode(false);
+        await refreshOnlineTtsConfig(false);
     });
     testBtn.addEventListener('click', testConnection);
     
     // 分别绑定气泡和语音的点击事件
     sendBubbleBtn.addEventListener('click', sendBubbleMessage);
     sendTtsBtn.addEventListener('click', sendTtsMessage);
+    sendOnlineTtsBtn.addEventListener('click', sendOnlineTtsMessage);
     
     // 分别绑定气泡和语音的输入监听和回车快捷键
     bubbleInputEl.addEventListener('input', updateSendBubbleButtonState);
@@ -832,6 +963,21 @@ def render_ws_control_page() -> str:
             event.preventDefault();
             void sendTtsMessage();
         }
+    });
+    onlineTtsInputEl.addEventListener('input', updateSendOnlineTtsButtonState);
+    onlineTtsInputEl.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            void sendOnlineTtsMessage();
+        }
+    });
+    onlineTtsShortcutSelectEl.addEventListener('change', () => {
+        const message = onlineTtsShortcutSelectEl.value;
+        if (message) {
+            onlineTtsInputEl.value = message;
+        }
+        renderOnlineTtsShortcuts(message);
+        updateSendOnlineTtsButtonState();
     });
     ttsShortcutSelectEl.addEventListener('change', () => {
         const message = ttsShortcutSelectEl.value;
@@ -850,15 +996,18 @@ def render_ws_control_page() -> str:
 
     updateSendBubbleButtonState();
     renderTtsShortcuts();
+    renderOnlineTtsShortcuts();
     updateSendTtsButtonState();
+    updateSendOnlineTtsButtonState();
     refreshDeviceStatus(false);
     refreshAiMode(false);
+    refreshOnlineTtsConfig(false);
     
     window.setInterval(() => {
         refreshDeviceStatus(true);
         refreshAiMode(true);
+        refreshOnlineTtsConfig(true);
     }, 5000);
 </script>
 </body>
-</html>
-"""
+</html>"""

@@ -53,6 +53,21 @@ class HarmonyConnectionManager:
         )
         return await self.broadcast(message)
 
+    async def send_app_audio_play(
+        self,
+        audio_url: str,
+        message_text: str,
+        audio_content_type: str = "audio/mpeg",
+    ) -> int:
+        message = HarmonyAppWebSocketMessage(
+            type="app_audio_play",
+            message=message_text,
+            audioUrl=audio_url,
+            audioContentType=audio_content_type,
+            timestamp=now_timestamp_ms(),
+        )
+        return await self.broadcast(message)
+
     async def broadcast(self, message: HarmonyAppWebSocketMessage) -> int:
         self._cleanup_closed_sessions()
         with self._lock:

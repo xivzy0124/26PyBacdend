@@ -49,6 +49,8 @@ class HarmonyAppWebSocketMessage(BaseModel):
     type: str
     message: str
     timestamp: int
+    audioUrl: str | None = None
+    audioContentType: str | None = None
     mode: str | None = None
     modeLabel: str | None = None
     modeDescription: str | None = None
@@ -56,3 +58,36 @@ class HarmonyAppWebSocketMessage(BaseModel):
 
 class BubbleMessageRequest(BaseModel):
     message: str
+
+
+class OnlineTtsRequest(BaseModel):
+    message: str
+    vcn: str | None = None
+
+
+class XfyunTtsAccountUpsertRequest(BaseModel):
+    accountId: str | None = None
+    name: str
+    appId: str
+    apiKey: str
+    apiSecret: str
+    defaultVcn: str = "xiaoyan"
+    description: str | None = None
+    enabled: bool = True
+
+
+class XfyunTtsAccountView(BaseModel):
+    accountId: str
+    name: str
+    appId: str
+    apiKey: str
+    apiSecret: str
+    defaultVcn: str
+    description: str
+    enabled: bool
+    isActive: bool
+    updatedAt: datetime
+
+
+class XfyunTtsAccountSelectRequest(BaseModel):
+    accountId: str

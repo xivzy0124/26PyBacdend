@@ -1,0 +1,16 @@
+{
+  "activeAccountId": "default-user",
+  "accounts": [
+    {
+      "accountId": "default-user",
+      "name": "默认用户",
+      "appId": "3b64f9d6",
+      "apiKey": "0060de8530ff338f12bea48307445876",
+      "apiSecret": "ZDAwZGI3NTlkOWVlYWJiNTZkMGU4YWQ2",
+      "defaultVcn": "x4_yezi",
+      "description": "在线语音合成默认账号",
+      "enabled": true,
+      "updatedAt": "2026-04-24T00:00:00"
+    }
+  ]
+}

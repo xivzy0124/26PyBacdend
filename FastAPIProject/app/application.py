@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from app.container import AppContainer
@@ -16,10 +18,13 @@ def create_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        os.makedirs(settings.data_dir, exist_ok=True)
+        os.makedirs(settings.audio_cache_dir, exist_ok=True)
         app.state.container = container
         yield
 
     application = FastAPI(title=settings.app_name, lifespan=lifespan)
+    application.mount("/audio-cache", StaticFiles(directory=settings.audio_cache_dir), name="audio-cache")
     application.include_router(http_router)
     application.include_router(websocket_router)
     return application
