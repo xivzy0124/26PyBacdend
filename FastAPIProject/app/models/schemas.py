@@ -65,6 +65,10 @@ class OnlineTtsRequest(BaseModel):
     vcn: str | None = None
 
 
+class LibraryAudioPlayRequest(BaseModel):
+    filename: str
+
+
 class XfyunTtsAccountUpsertRequest(BaseModel):
     accountId: str | None = None
     name: str

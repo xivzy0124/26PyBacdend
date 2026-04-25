@@ -20,11 +20,13 @@ def create_app() -> FastAPI:
     async def lifespan(app: FastAPI):
         os.makedirs(settings.data_dir, exist_ok=True)
         os.makedirs(settings.audio_cache_dir, exist_ok=True)
+        os.makedirs(settings.audio_library_dir, exist_ok=True)
         app.state.container = container
         yield
 
     application = FastAPI(title=settings.app_name, lifespan=lifespan)
     application.mount("/audio-cache", StaticFiles(directory=settings.audio_cache_dir), name="audio-cache")
+    application.mount("/audio-library", StaticFiles(directory=settings.audio_library_dir), name="audio-library")
     application.include_router(http_router)
     application.include_router(websocket_router)
     return application

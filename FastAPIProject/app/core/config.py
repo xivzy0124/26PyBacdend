@@ -23,6 +23,13 @@ class AppSettings:
             "audio_cache",
         ),
     )
+    audio_library_dir: str = os.getenv(
+        "HFOOD_AUDIO_LIBRARY_DIR",
+        os.path.join(
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
+            "audio_library",
+        ),
+    )
     xfyun_account_store_path: str = os.getenv(
         "HFOOD_XFYUN_ACCOUNT_STORE_PATH",
         os.path.join(

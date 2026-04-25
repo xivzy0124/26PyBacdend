@@ -10,7 +10,6 @@ import json
 import os
 from threading import RLock
 from urllib.parse import urlencode
-from uuid import uuid4
 
 from websockets.asyncio.client import connect
 
@@ -40,20 +39,60 @@ class GeneratedAudioAsset:
     message_text: str
 
 
+@dataclass(slots=True)
+class LibraryAudioAsset:
+    filename: str
+    display_name: str
+    relative_url: str
+    content_type: str = "audio/mpeg"
+
+
+WINDOWS_RESERVED_FILENAMES: set[str] = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+}
+
+
 class XfyunOnlineTtsService:
     def __init__(
         self,
         account_service: XfyunTtsAccountService,
         audio_cache_dir: str | None = None,
+        audio_library_dir: str | None = None,
     ) -> None:
         self._account_service = account_service
         self._audio_cache_dir = audio_cache_dir or settings.audio_cache_dir
+        self._audio_library_dir = audio_library_dir or settings.audio_library_dir
         self._audio_cache_max_files = max(1, settings.audio_cache_max_files)
         self._lock = RLock()
         os.makedirs(self._audio_cache_dir, exist_ok=True)
+        os.makedirs(self._audio_library_dir, exist_ok=True)
 
     def get_audio_cache_dir(self) -> str:
         return self._audio_cache_dir
+
+    def get_audio_library_dir(self) -> str:
+        return self._audio_library_dir
 
     def build_runtime_payload(self) -> dict:
         active_account = self._account_service.get_active_account()
@@ -90,7 +129,7 @@ class XfyunOnlineTtsService:
             text=normalized_text,
             vcn=target_vcn,
         )
-        filename = self._build_audio_filename(target_vcn)
+        filename = self._build_audio_filename(normalized_text)
         file_path = os.path.join(self._audio_cache_dir, filename)
         with self._lock:
             with open(file_path, "wb") as file:
@@ -103,6 +142,41 @@ class XfyunOnlineTtsService:
             content_type="audio/mpeg",
             voice_name=target_vcn,
             message_text=normalized_text,
+        )
+
+    def list_library_audio_assets(self) -> list[LibraryAudioAsset]:
+        library_assets: list[LibraryAudioAsset] = []
+        with os.scandir(self._audio_library_dir) as iterator:
+            for entry in iterator:
+                if not entry.is_file():
+                    continue
+                if not entry.name.lower().endswith(".mp3"):
+                    continue
+                filename = entry.name
+                display_name, _ = os.path.splitext(filename)
+                library_assets.append(
+                    LibraryAudioAsset(
+                        filename=filename,
+                        display_name=display_name or filename,
+                        relative_url=f"/audio-library/{filename}",
+                    )
+                )
+        library_assets.sort(key=lambda item: item.filename.lower())
+        return library_assets
+
+    def resolve_library_audio_asset(self, filename: str) -> LibraryAudioAsset:
+        normalized_filename = self._normalize_library_filename(filename)
+        file_path = os.path.abspath(os.path.join(self._audio_library_dir, normalized_filename))
+        library_root = os.path.abspath(self._audio_library_dir)
+        if os.path.commonpath([library_root, file_path]) != library_root:
+            raise ValueError("invalid audio filename")
+        if not os.path.isfile(file_path):
+            raise FileNotFoundError(normalized_filename)
+        display_name, _ = os.path.splitext(normalized_filename)
+        return LibraryAudioAsset(
+            filename=normalized_filename,
+            display_name=display_name or normalized_filename,
+            relative_url=f"/audio-library/{normalized_filename}",
         )
 
     def _build_auth_query(self, api_key: str, api_secret: str) -> str:
@@ -178,10 +252,9 @@ class XfyunOnlineTtsService:
             raise RuntimeError("xfyun tts returned empty audio")
         return audio_bytes
 
-    def _build_audio_filename(self, vcn: str) -> str:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_vcn = "".join(ch for ch in vcn if ch.isalnum() or ch in {"_", "-"}) or "voice"
-        return f"{timestamp}_{safe_vcn}_{uuid4().hex[:10]}.mp3"
+    def _build_audio_filename(self, message_text: str) -> str:
+        safe_stem = self._sanitize_generated_audio_stem(message_text)
+        return f"{safe_stem}.mp3"
 
     def _cleanup_audio_cache_locked(self) -> None:
         cache_entries: list[tuple[float, str]] = []
@@ -206,3 +279,25 @@ class XfyunOnlineTtsService:
                 os.remove(stale_path)
             except OSError:
                 continue
+
+    def _sanitize_generated_audio_stem(self, message_text: str) -> str:
+        invalid_chars = set('<>:"/\\|?*')
+        sanitized_stem = "".join(
+            ch for ch in message_text if ch not in invalid_chars and ord(ch) >= 32
+        )
+        sanitized_stem = " ".join(sanitized_stem.split()).strip().rstrip(". ")
+        if sanitized_stem == "":
+            sanitized_stem = "audio"
+        if sanitized_stem.upper() in WINDOWS_RESERVED_FILENAMES:
+            sanitized_stem = f"{sanitized_stem}_audio"
+        return sanitized_stem[:120]
+
+    def _normalize_library_filename(self, filename: str) -> str:
+        normalized_filename = filename.strip()
+        if normalized_filename == "":
+            raise ValueError("filename cannot be empty")
+        if normalized_filename != os.path.basename(normalized_filename):
+            raise ValueError("invalid audio filename")
+        if not normalized_filename.lower().endswith(".mp3"):
+            raise ValueError("only mp3 files are supported")
+        return normalized_filename

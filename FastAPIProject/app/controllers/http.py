@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.container import AppContainer, get_container_from_request
 from app.core.config import settings
-from app.models.schemas import ApiResponse, BubbleMessageRequest, OnlineTtsRequest
+from app.models.schemas import ApiResponse, BubbleMessageRequest, LibraryAudioPlayRequest, OnlineTtsRequest
 from app.views.ws_control_page import render_ws_control_page
 
 router = APIRouter()
@@ -53,31 +53,6 @@ async def notify_connected(
     return ApiResponse.success(data, message)
 
 
-@router.post("/api/ws/harmony/notify-message", response_model=ApiResponse)
-async def notify_message(
-    request: BubbleMessageRequest,
-    container: AppContainer = Depends(get_container_from_request),
-) -> ApiResponse:
-    message_text = request.message.strip()
-    if message_text == "":
-        return ApiResponse.error(400, "message cannot be empty")
-
-    connected_clients = container.connection_manager.get_connected_count()
-    delivered_count = await container.connection_manager.send_app_bubble(message_text)
-    data = {
-        "connectedClients": connected_clients,
-        "deliveredCount": delivered_count,
-        "message": message_text,
-        "webSocketPath": "/ws/harmony-app",
-    }
-    message = (
-        "app bubble notification sent"
-        if delivered_count > 0
-        else "no Harmony app websocket clients connected"
-    )
-    return ApiResponse.success(data, message)
-
-
 @router.post("/api/ws/harmony/notify-tts", response_model=ApiResponse)
 async def notify_tts(
     request: BubbleMessageRequest,
@@ -108,6 +83,23 @@ async def get_online_tts_config(
     container: AppContainer = Depends(get_container_from_request),
 ) -> ApiResponse:
     return ApiResponse.success(container.xfyun_online_tts_service.build_runtime_payload())
+
+
+@router.get("/api/tts/online/library", response_model=ApiResponse)
+async def get_online_tts_library(
+    request: Request,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    library_assets = container.xfyun_online_tts_service.list_library_audio_assets()
+    data = [
+        {
+            "filename": asset.filename,
+            "displayName": asset.display_name,
+            "audioUrl": build_public_asset_url(request, asset.relative_url),
+        }
+        for asset in library_assets
+    ]
+    return ApiResponse.success(data)
 
 
 @router.post("/api/ws/harmony/notify-online-tts", response_model=ApiResponse)
@@ -141,6 +133,7 @@ async def notify_online_tts(
         "connectedClients": connected_clients,
         "deliveredCount": delivered_count,
         "message": message_text,
+        "filename": generated_audio.filename,
         "audioUrl": audio_url,
         "voiceName": generated_audio.voice_name,
         "webSocketPath": "/ws/harmony-app",
@@ -149,6 +142,42 @@ async def notify_online_tts(
         "online tts audio notification sent"
         if delivered_count > 0
         else "audio generated but no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/ws/harmony/play-library-audio", response_model=ApiResponse)
+async def play_library_audio(
+    payload: LibraryAudioPlayRequest,
+    request: Request,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    try:
+        library_audio = container.xfyun_online_tts_service.resolve_library_audio_asset(payload.filename)
+    except ValueError as error:
+        return ApiResponse.error(400, str(error))
+    except FileNotFoundError:
+        return ApiResponse.error(404, "audio file not found")
+
+    audio_url = build_public_asset_url(request, library_audio.relative_url)
+    connected_clients = container.connection_manager.get_connected_count()
+    delivered_count = await container.connection_manager.send_app_audio_play(
+        audio_url=audio_url,
+        message_text=library_audio.display_name,
+        audio_content_type=library_audio.content_type,
+    )
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "filename": library_audio.filename,
+        "displayName": library_audio.display_name,
+        "audioUrl": audio_url,
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "library audio notification sent"
+        if delivered_count > 0
+        else "audio selected but no Harmony app websocket clients connected"
     )
     return ApiResponse.success(data, message)
 

@@ -12,3 +12,7 @@ app/data/audio_cache/**/*.mp3
 app/data/audio_cache/**/*.wav
 app/data/audio_cache/**/*.pcm
 app/data/audio_cache/**/*.opus
+
+# Keep manually managed audio library contents in git
+!app/data/audio_library/
+!app/data/audio_library/**

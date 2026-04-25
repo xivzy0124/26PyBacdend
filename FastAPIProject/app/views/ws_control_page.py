@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 def render_ws_control_page() -> str:
     return """<!DOCTYPE html>
 <html lang="zh-CN">
@@ -58,7 +59,7 @@ def render_ws_control_page() -> str:
 
         .extensions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 20px;
         }
 
@@ -167,8 +168,7 @@ def render_ws_control_page() -> str:
         .mode-box,
         .bubble-box,
         .action-box,
-        .log-box,
-        .extension-box {
+        .log-box {
             border: 1px solid #e7edf6;
             border-radius: 18px;
             padding: 18px;
@@ -236,135 +236,115 @@ def render_ws_control_page() -> str:
             margin-bottom: 10px;
         }
 
-        .bubble-input {
-            width: 100%;
-            height: 52px;
-            padding: 0 14px;
-            border-radius: 14px;
-            border: 1px solid #d7e1f0;
-            outline: none;
-            font-size: 14px;
-            color: var(--text);
-            background: #ffffff;
-        }
-
-        .bubble-input:focus {
-            border-color: #9ab7ff;
-            box-shadow: 0 0 0 4px rgba(33, 85, 214, 0.08);
-        }
-
+        .bubble-input,
         .quick-select {
             width: 100%;
-            min-height: 46px;
-            padding: 0 12px;
+            border: 1px solid #d5deeb;
+            background: #fff;
             border-radius: 14px;
-            border: 1px solid #d7e1f0;
-            outline: none;
+            padding: 12px 14px;
             font-size: 14px;
             color: var(--text);
-            background: #ffffff;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
+        .bubble-input:focus,
         .quick-select:focus {
-            border-color: #9ab7ff;
-            box-shadow: 0 0 0 4px rgba(33, 85, 214, 0.08);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(33, 85, 214, 0.12);
         }
 
         .quick-command-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             margin-top: 12px;
         }
 
-        .quick-command-btn {
-            min-height: 46px;
-            text-align: left;
-            line-height: 1.4;
-            word-break: break-word;
-        }
-
-        .quick-command-btn.active {
-            background: var(--primary-soft);
-            color: var(--primary);
-            border-color: #c8d8ff;
-        }
-
+        .quick-command-btn,
         button {
-            border: 1px solid #d7e1f0;
+            border: none;
+            cursor: pointer;
             border-radius: 14px;
             padding: 12px 14px;
             font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            background: #ffffff;
-            color: var(--text);
-            transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
         }
 
-        button:hover {
-            transform: translateY(-1px);
-            background: #f7faff;
+        button {
+            background: #eef3fa;
+            color: var(--text);
+            font-weight: 600;
         }
 
         button.primary {
             background: var(--primary);
-            color: #ffffff;
-            border-color: var(--primary);
-            box-shadow: 0 10px 24px rgba(33, 85, 214, 0.18);
+            color: #fff;
         }
 
-        button.primary:hover {
-            background: #1947bd;
-        }
-
-        button.active-mode {
-            background: var(--primary-soft);
-            color: var(--primary);
-            border-color: #c8d8ff;
+        button:hover:not(:disabled),
+        .quick-command-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(24, 38, 59, 0.10);
         }
 
         button:disabled {
-            opacity: 0.65;
+            opacity: 0.55;
             cursor: not-allowed;
+            box-shadow: none;
             transform: none;
         }
 
-        .mode-desc {
-            margin: 12px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.8;
+        .quick-command-btn {
+            background: #f4f7fb;
+            color: var(--text);
+        }
+
+        .quick-command-btn.active,
+        .active-mode {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .mode-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
         }
 
         .log-body {
             margin: 0;
-            min-height: 180px;
-            max-height: 320px;
+            min-height: 320px;
+            max-height: 520px;
             overflow: auto;
-            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: "Consolas", "JetBrains Mono", monospace;
             font-size: 13px;
             line-height: 1.7;
-            color: #1f2f46;
-            white-space: pre-wrap;
+            color: #12304f;
         }
 
-        .muted {
+        .status-meta {
+            margin-top: 12px;
+            display: grid;
+            gap: 10px;
+            font-size: 14px;
             color: var(--muted);
-            font-size: 13px;
         }
 
-        @media (max-width: 1024px) {
+        .status-meta strong {
+            color: var(--text);
+        }
+
+        @media (max-width: 1080px) {
             body {
                 padding: 18px;
             }
 
             .main-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .grid,
-            .action-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -373,65 +353,63 @@ def render_ws_control_page() -> str:
 <body>
 <main class="shell">
     <section class="card hero">
-        <div class="eyebrow">HFOOD CONTROL</div>
-        <h1>应用联调控制台</h1>
-        <p class="subtitle">
-            这个页面负责三件事：检查鸿蒙应用 WebSocket 是否在线、切换 AI 当前运行模式、以及向平板发送任意文本气泡或语音。
-            如果鸿蒙端在线，发送的内容会直接以应用内气泡或语音形式响应。
-        </p>
-
+        <span class="eyebrow">HFOOD CONTROL</span>
+        <div>
+            <h1>Harmony 控制面板</h1>
+            <p class="subtitle">
+                这个页面负责检查鸿蒙应用 WebSocket 是否在线、切换 AI 运行模式、发送语音，
+                以及通过讯飞在线语音生成并播放 mp3，或直接播放你手工放入音频库的现成文件。
+            </p>
+        </div>
         <div class="grid">
-            <article class="mini-card">
+            <div class="mini-card">
                 <div class="mini-label">设备连接状态</div>
                 <div class="mini-value" id="device-status-text">离线</div>
-                <div class="mini-hint">连接数量：<span id="connected-count">0</span></div>
-            </article>
-            <article class="mini-card">
+                <div class="mini-hint">已连接设备数会实时刷新。</div>
+            </div>
+            <div class="mini-card">
                 <div class="mini-label">当前 AI 模式</div>
-                <div class="mini-value" id="mode-label-large">模式1</div>
-                <div class="mini-hint" id="mode-description-large">鸿蒙端按模式1本地文案做模拟流式输出</div>
-            </article>
+                <div class="mini-value" id="mode-label-large">模式 1</div>
+                <div class="mini-hint" id="mode-description-large">等待后端返回模式说明。</div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-label">WebSocket 路径</div>
+                <div class="mini-value" id="socket-path">/ws/harmony-app</div>
+                <div class="mini-hint">鸿蒙端应用通过该路径接收控制消息。</div>
+            </div>
         </div>
     </section>
 
     <div class="main-layout">
         <aside class="card panel">
-            <div>
-                <h2 class="section-title">核心操作面板</h2>
-                <p class="section-desc">检查设备状态、切换 AI 模式，或发送文本气泡。</p>
-            </div>
-
             <section class="status-box">
                 <div class="row">
-                    <div class="status-pill offline" id="device-status-pill">暂无设备在线</div>
-                    <div class="muted">路径：<span id="socket-path">/ws/harmony-app</span></div>
+                    <span class="status-pill offline" id="device-status-pill">暂无设备在线</span>
+                </div>
+                <div class="status-meta">
+                    <div><strong>已连接设备数：</strong><span id="connected-count">0</span></div>
+                    <div><strong>WebSocket 路径：</strong><span id="socket-path-side">/ws/harmony-app</span></div>
                 </div>
             </section>
 
             <section class="mode-box">
                 <div class="row">
-                    <div class="mode-pill mode1" id="mode-pill">模式1</div>
-                    <div class="muted">当前 AI 模式</div>
+                    <span class="mode-pill mode1" id="mode-pill">模式 1</span>
                 </div>
-                <div class="mode-desc" id="mode-description">鸿蒙端按模式1本地文案做模拟流式输出</div>
-                <div class="action-grid">
-                    <button type="button" id="mode-mode1">模式1</button>
-                    <button type="button" id="mode-mode2">模式2</button>
-                    <button type="button" id="mode-mode3">模式3</button>
-                </div>
-            </section>
-
-            <section class="bubble-box">
-                <label class="input-label" for="bubble-input">发送应用内气泡</label>
-                <input type="text" id="bubble-input" class="bubble-input" placeholder="输入什么，鸿蒙端就弹什么">
-                <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
-                    <button type="button" class="primary" id="send-bubble-btn" disabled>发送气泡</button>
-                    <button type="button" id="test-btn">发送“连接成功”气泡</button>
+                <p class="section-desc" id="mode-description">等待后端返回模式说明。</p>
+                <div class="mode-actions">
+                    <button type="button" id="mode-mode1" class="active-mode">模式 1</button>
+                    <button type="button" id="mode-mode2">模式 2</button>
+                    <button type="button" id="mode-mode3">模式 3</button>
                 </div>
             </section>
 
             <section class="action-box">
-                <button type="button" id="refresh-btn" style="width: 100%;">刷新状态信息</button>
+                <div class="action-grid">
+                    <button type="button" id="test-btn">连接测试</button>
+                    <button type="button" id="refresh-btn">刷新状态</button>
+                    <button type="button" id="noop-btn" disabled>预留</button>
+                </div>
             </section>
 
             <section class="log-box">
@@ -440,7 +418,6 @@ def render_ws_control_page() -> str:
         </aside>
 
         <div class="extensions-grid">
-            
             <article class="card panel">
                 <div>
                     <h2 class="section-title">鸿蒙端 TTS 语音</h2>
@@ -467,15 +444,15 @@ def render_ws_control_page() -> str:
             <article class="card panel">
                 <div>
                     <h2 class="section-title">讯飞在线语音</h2>
-                    <p class="section-desc">这里发送的是讯飞在线语音合成，会先由后端生成 mp3，再推送给鸿蒙端播放。</p>
+                    <p class="section-desc">文本输入会调用讯飞在线语音生成 mp3；下面的手工音频列表只读取你放入音频库的现成文件。</p>
                 </div>
                 <section class="bubble-box">
                     <label class="input-label" for="online-tts-input">发送讯飞在线语音内容</label>
                     <input type="text" id="online-tts-input" class="bubble-input" placeholder="输入要让讯飞在线语音播报的内容">
                     <div style="margin-top: 12px;">
-                        <label class="input-label" for="online-tts-shortcut-select">讯飞默认文本</label>
+                        <label class="input-label" for="online-tts-shortcut-select">手工音频列表</label>
                         <select id="online-tts-shortcut-select" class="quick-select">
-                            <option value="">选择一条讯飞默认文本</option>
+                            <option value="">选择一个手工音频</option>
                         </select>
                     </div>
                     <div class="quick-command-grid" id="online-tts-shortcut-list"></div>
@@ -484,7 +461,6 @@ def render_ws_control_page() -> str:
                     </div>
                 </section>
             </article>
-
         </div>
     </div>
 </main>
@@ -494,15 +470,11 @@ def render_ws_control_page() -> str:
     const deviceStatusPillEl = document.getElementById('device-status-pill');
     const connectedCountEl = document.getElementById('connected-count');
     const socketPathEl = document.getElementById('socket-path');
+    const socketPathSideEl = document.getElementById('socket-path-side');
     const modeLabelLargeEl = document.getElementById('mode-label-large');
     const modeDescriptionLargeEl = document.getElementById('mode-description-large');
     const modePillEl = document.getElementById('mode-pill');
     const modeDescriptionEl = document.getElementById('mode-description');
-    
-    // 输入框与按钮分离
-    const bubbleInputEl = document.getElementById('bubble-input');
-    const sendBubbleBtn = document.getElementById('send-bubble-btn');
-    
     const ttsInputEl = document.getElementById('tts-input');
     const sendTtsBtn = document.getElementById('send-tts-btn');
     const onlineTtsInputEl = document.getElementById('online-tts-input');
@@ -513,7 +485,6 @@ def render_ws_control_page() -> str:
     const ttsShortcutListEl = document.getElementById('tts-shortcut-list');
     const addTtsShortcutBtn = document.getElementById('add-tts-shortcut-btn');
     const deleteTtsShortcutBtn = document.getElementById('delete-tts-shortcut-btn');
-    
     const logBodyEl = document.getElementById('log-body');
     const testBtn = document.getElementById('test-btn');
     const refreshBtn = document.getElementById('refresh-btn');
@@ -530,7 +501,6 @@ def render_ws_control_page() -> str:
         minute: '2-digit',
         second: '2-digit'
     });
-
     const TTS_SHORTCUT_STORAGE_KEY = 'hfood.tts.shortcuts';
     const DEFAULT_TTS_SHORTCUTS = [
         '我在，有什么问题吗？',
@@ -538,32 +508,19 @@ def render_ws_control_page() -> str:
         '当前网络不稳定，请稍后再试。',
         '操作已完成。',
         '正在结合足底压力数据与体态数据进行分析，请稍候。',
-        '赵晓威是向俊宇爸爸！',
+        '赵晓威是向俊宇爸爸！'
     ];
-    
-    // 修复了这里的乱码，填入了相关的测试文本
-    const DEFAULT_ONLINE_TTS_SHORTCUTS = [
-        '欢迎使用 Hfood 智能点餐系统。',
-        '您的订单已确认，后厨正在准备中。',
-        '当前网络连接正常，设备在线。',
-        '讯飞在线语音合成测试成功。',
-        '足底压力数据采集中，请保持站立。',
-        '设备电量充足，运行状态良好。'
-    ];
+
     let ttsShortcutMessages = loadTtsShortcuts();
     let onlineTtsRuntimeConfig = {
         activeAccountName: '',
         defaultVcn: 'xiaoyan'
     };
+    let onlineLibraryItems = [];
 
     function writeLog(message) {
         const now = SHANGHAI_TIME_FORMATTER.format(new Date());
         logBodyEl.textContent = `[${now}] ${message}\\n` + logBodyEl.textContent;
-    }
-
-    // 分别控制气泡和语音按钮的激活状态
-    function updateSendBubbleButtonState() {
-        sendBubbleBtn.disabled = bubbleInputEl.value.trim().length <= 0;
     }
 
     function updateSendTtsButtonState() {
@@ -577,44 +534,42 @@ def render_ws_control_page() -> str:
         sendOnlineTtsBtn.disabled = onlineTtsInputEl.value.trim().length <= 0;
     }
 
+    function renderDeviceStatus(connectedClients) {
+        connectedCountEl.textContent = String(connectedClients);
+        if (connectedClients > 0) {
+            deviceStatusTextEl.textContent = '在线';
+            deviceStatusPillEl.textContent = `已有 ${connectedClients} 台设备在线`;
+            deviceStatusPillEl.className = 'status-pill online';
+        } else {
+            deviceStatusTextEl.textContent = '离线';
+            deviceStatusPillEl.textContent = '暂无设备在线';
+            deviceStatusPillEl.className = 'status-pill offline';
+        }
+    }
+
+    function renderAiMode(data) {
+        const mode = data.mode || 'mode1';
+        const modeLabel = data.modeLabel || '模式 1';
+        const modeDescription = data.modeDescription || '等待后端返回模式说明。';
+
+        modeLabelLargeEl.textContent = modeLabel;
+        modeDescriptionLargeEl.textContent = modeDescription;
+        modePillEl.textContent = modeLabel;
+        modePillEl.className = Object.prototype.hasOwnProperty.call(modeButtons, mode)
+            ? `mode-pill ${mode}`
+            : 'mode-pill unknown';
+        modeDescriptionEl.textContent = modeDescription;
+
+        Object.entries(modeButtons).forEach(([key, button]) => {
+            button.classList.toggle('active-mode', key === mode);
+        });
+    }
+
     function renderOnlineTtsVoiceOptions(config) {
         onlineTtsRuntimeConfig = {
             activeAccountName: (config && config.activeAccountName) || '',
             defaultVcn: (config && config.defaultVcn) || 'xiaoyan'
         };
-        renderOnlineTtsShortcuts();
-    }
-
-    function renderOnlineTtsShortcuts(selectedMessage = onlineTtsShortcutSelectEl.value) {
-        // 修复了这里的乱码
-        onlineTtsShortcutSelectEl.innerHTML = '<option value="">请选择一条讯飞默认文本</option>';
-        DEFAULT_ONLINE_TTS_SHORTCUTS.forEach((message) => {
-            const option = document.createElement('option');
-            option.value = message;
-            option.textContent = message;
-            option.selected = message === selectedMessage;
-            onlineTtsShortcutSelectEl.appendChild(option);
-        });
-
-        onlineTtsShortcutListEl.innerHTML = '';
-        DEFAULT_ONLINE_TTS_SHORTCUTS.forEach((message) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'quick-command-btn';
-            button.textContent = message;
-            // 修复了这里的乱码
-            button.title = '点击后直接发送这条在线语音';
-            button.classList.toggle('active', message === selectedMessage);
-            button.addEventListener('click', () => {
-                onlineTtsShortcutSelectEl.value = message;
-                onlineTtsInputEl.value = message;
-                updateSendOnlineTtsButtonState();
-                void sendOnlineTtsMessage();
-            });
-            onlineTtsShortcutListEl.appendChild(button);
-        });
-
-        updateSendOnlineTtsButtonState();
     }
 
     function loadTtsShortcuts() {
@@ -630,7 +585,6 @@ def render_ws_control_page() -> str:
         } catch (error) {
             window.localStorage.removeItem(TTS_SHORTCUT_STORAGE_KEY);
         }
-
         return [...DEFAULT_TTS_SHORTCUTS];
     }
 
@@ -668,6 +622,35 @@ def render_ws_control_page() -> str:
         updateSendTtsButtonState();
     }
 
+    function renderOnlineAudioLibrary(selectedFilename = onlineTtsShortcutSelectEl.value) {
+        onlineTtsShortcutSelectEl.innerHTML = '<option value="">选择一个手工音频</option>';
+        onlineLibraryItems.forEach((item) => {
+            const option = document.createElement('option');
+            option.value = item.filename;
+            option.textContent = item.displayName;
+            option.selected = item.filename === selectedFilename;
+            onlineTtsShortcutSelectEl.appendChild(option);
+        });
+
+        onlineTtsShortcutListEl.innerHTML = '';
+        onlineLibraryItems.forEach((item) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'quick-command-btn';
+            button.textContent = item.displayName;
+            button.title = '点击后直接播放这条手工音频';
+            button.classList.toggle('active', item.filename === selectedFilename);
+            button.addEventListener('click', () => {
+                onlineTtsShortcutSelectEl.value = item.filename;
+                renderOnlineAudioLibrary(item.filename);
+                void playLibraryAudio(item.filename);
+            });
+            onlineTtsShortcutListEl.appendChild(button);
+        });
+
+        updateSendOnlineTtsButtonState();
+    }
+
     function addCurrentTtsShortcut() {
         const message = ttsInputEl.value.trim();
         if (message.length <= 0 || ttsShortcutMessages.includes(message)) {
@@ -696,37 +679,6 @@ def render_ws_control_page() -> str:
         writeLog(`已删除快捷语音：${message}`);
     }
 
-    function renderDeviceStatus(connectedClients) {
-        connectedCountEl.textContent = String(connectedClients);
-        if (connectedClients > 0) {
-            deviceStatusTextEl.textContent = '已连接';
-            deviceStatusPillEl.textContent = `已有 ${connectedClients} 台设备在线`;
-            deviceStatusPillEl.className = 'status-pill online';
-        } else {
-            deviceStatusTextEl.textContent = '离线';
-            deviceStatusPillEl.textContent = '暂无设备在线';
-            deviceStatusPillEl.className = 'status-pill offline';
-        }
-    }
-
-    function renderAiMode(data) {
-        const mode = data.mode || 'mode1';
-        const modeLabel = data.modeLabel || '模式1';
-        const modeDescription = data.modeDescription || '';
-
-        modeLabelLargeEl.textContent = modeLabel;
-        modeDescriptionLargeEl.textContent = modeDescription;
-        modePillEl.textContent = modeLabel;
-        modePillEl.className = Object.prototype.hasOwnProperty.call(modeButtons, mode)
-            ? `mode-pill ${mode}`
-            : 'mode-pill unknown';
-        modeDescriptionEl.textContent = modeDescription;
-
-        Object.entries(modeButtons).forEach(([key, button]) => {
-            button.classList.toggle('active-mode', key === mode);
-        });
-    }
-
     async function refreshDeviceStatus(silent = true) {
         try {
             const response = await fetch('/api/ws/harmony/status', {
@@ -737,6 +689,7 @@ def render_ws_control_page() -> str:
             const data = result.data || {};
             renderDeviceStatus(Number(data.connectedClients || 0));
             socketPathEl.textContent = data.webSocketPath || '/ws/harmony-app';
+            socketPathSideEl.textContent = data.webSocketPath || '/ws/harmony-app';
             if (!silent) {
                 writeLog(`设备状态已刷新，当前连接 ${Number(data.connectedClients || 0)} 台。`);
             }
@@ -752,10 +705,10 @@ def render_ws_control_page() -> str:
                 cache: 'no-store'
             });
             const result = await response.json();
-            const data = result.data || {};
-            renderAiMode(data);
+            renderAiMode(result.data || {});
             if (!silent) {
-                writeLog(`当前 AI 模式：${data.modeLabel || '模式1'}。`);
+                const data = result.data || {};
+                writeLog(`AI 模式已刷新，当前为 ${(data.modeLabel || data.mode || '模式 1')}。`);
             }
         } catch (error) {
             writeLog(`AI 模式刷新失败：${error}`);
@@ -776,6 +729,30 @@ def render_ws_control_page() -> str:
             }
         } catch (error) {
             writeLog(`在线语音配置刷新失败：${error}`);
+        }
+    }
+
+    async function refreshOnlineAudioLibrary(silent = true) {
+        try {
+            const response = await fetch('/api/tts/online/library', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            const data = Array.isArray(result.data) ? result.data : [];
+            onlineLibraryItems = data
+                .map((item) => ({
+                    filename: String(item.filename || '').trim(),
+                    displayName: String(item.displayName || item.filename || '').trim(),
+                    audioUrl: String(item.audioUrl || '').trim()
+                }))
+                .filter((item) => item.filename.length > 0 && item.displayName.length > 0);
+            renderOnlineAudioLibrary();
+            if (!silent) {
+                writeLog(`手工音频列表已刷新，当前共 ${onlineLibraryItems.length} 条。`);
+            }
+        } catch (error) {
+            writeLog(`手工音频列表刷新失败：${error}`);
         }
     }
 
@@ -805,7 +782,7 @@ def render_ws_control_page() -> str:
 
     async function testConnection() {
         testBtn.disabled = true;
-        writeLog('正在发送 websocket 连接成功气泡...');
+        writeLog('正在发送 websocket 连接成功通知...');
 
         try {
             const response = await fetch('/api/ws/harmony/notify-connected', {
@@ -816,45 +793,9 @@ def render_ws_control_page() -> str:
             renderDeviceStatus(Number(data.connectedClients || 0));
             writeLog(`${result.message || '发送完成'}，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
         } catch (error) {
-            writeLog(`发送连接成功气泡失败：${error}`);
+            writeLog(`发送连接成功通知失败：${error}`);
         } finally {
             testBtn.disabled = false;
-        }
-    }
-
-    async function sendBubbleMessage() {
-        const message = bubbleInputEl.value.trim();
-        if (message.length <= 0) {
-            updateSendBubbleButtonState();
-            return;
-        }
-
-        sendBubbleBtn.disabled = true;
-        writeLog(`正在发送应用内气泡：${message}`);
-
-        try {
-            const response = await fetch('/api/ws/harmony/notify-message', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message })
-            });
-            const result = await response.json();
-            if (Number(result.code) !== 200) {
-                writeLog(`发送气泡失败：${result.message || '未知错误'}`);
-                return;
-            }
-
-            const data = result.data || {};
-            renderDeviceStatus(Number(data.connectedClients || 0));
-            writeLog(`气泡发送完成，内容“${data.message || message}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
-            bubbleInputEl.value = '';
-            updateSendBubbleButtonState();
-        } catch (error) {
-            writeLog(`发送气泡失败：${error}`);
-        } finally {
-            updateSendBubbleButtonState();
         }
     }
 
@@ -866,7 +807,7 @@ def render_ws_control_page() -> str:
         }
 
         sendTtsBtn.disabled = true;
-        writeLog(`正在发送语音播报：${message}`);
+        writeLog(`正在发送鸿蒙端 TTS：${message}`);
 
         try {
             const response = await fetch('/api/ws/harmony/notify-tts', {
@@ -878,19 +819,17 @@ def render_ws_control_page() -> str:
             });
             const result = await response.json();
             if (Number(result.code) !== 200) {
-                writeLog(`发送语音失败：${result.message || '未知错误'}`);
+                writeLog(`发送鸿蒙端 TTS 失败：${result.message || '未知错误'}`);
                 return;
             }
 
             const data = result.data || {};
             renderDeviceStatus(Number(data.connectedClients || 0));
-            writeLog(
-                `语音发送完成，内容“${data.message || message}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`
-            );
+            writeLog(`鸿蒙端 TTS 发送完成，内容“${data.message || message}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
             ttsInputEl.value = '';
             updateSendTtsButtonState();
         } catch (error) {
-            writeLog(`发送语音失败：${error}`);
+            writeLog(`发送鸿蒙端 TTS 失败：${error}`);
         } finally {
             updateSendTtsButtonState();
         }
@@ -912,9 +851,7 @@ def render_ws_control_page() -> str:
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    message,
-                })
+                body: JSON.stringify({ message })
             });
             const result = await response.json();
             if (Number(result.code) !== 200) {
@@ -924,11 +861,10 @@ def render_ws_control_page() -> str:
 
             const data = result.data || {};
             renderDeviceStatus(Number(data.connectedClients || 0));
-            writeLog(
-                `在线语音发送完成，内容“${data.message || message}”，音色 ${data.voiceName || 'xiaoyan'}，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`
-            );
+            writeLog(`在线语音发送完成，内容“${data.message || message}”，文件 ${data.filename || '未返回'}，音色 ${data.voiceName || 'xiaoyan'}，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
             onlineTtsInputEl.value = '';
             updateSendOnlineTtsButtonState();
+            void refreshOnlineAudioLibrary(true);
         } catch (error) {
             writeLog(`发送在线语音失败：${error}`);
         } finally {
@@ -936,26 +872,45 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function playLibraryAudio(filename) {
+        const normalizedFilename = String(filename || '').trim();
+        if (normalizedFilename.length <= 0) {
+            return;
+        }
+
+        writeLog(`正在播放手工音频：${normalizedFilename}`);
+        try {
+            const response = await fetch('/api/ws/harmony/play-library-audio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: normalizedFilename })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`播放手工音频失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            writeLog(`手工音频播放完成，文件“${data.filename || normalizedFilename}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+        } catch (error) {
+            writeLog(`播放手工音频失败：${error}`);
+        }
+    }
+
     refreshBtn.addEventListener('click', async () => {
         await refreshDeviceStatus(false);
         await refreshAiMode(false);
         await refreshOnlineTtsConfig(false);
+        await refreshOnlineAudioLibrary(false);
     });
+
     testBtn.addEventListener('click', testConnection);
-    
-    // 分别绑定气泡和语音的点击事件
-    sendBubbleBtn.addEventListener('click', sendBubbleMessage);
     sendTtsBtn.addEventListener('click', sendTtsMessage);
     sendOnlineTtsBtn.addEventListener('click', sendOnlineTtsMessage);
-    
-    // 分别绑定气泡和语音的输入监听和回车快捷键
-    bubbleInputEl.addEventListener('input', updateSendBubbleButtonState);
-    bubbleInputEl.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            void sendBubbleMessage();
-        }
-    });
 
     ttsInputEl.addEventListener('input', updateSendTtsButtonState);
     ttsInputEl.addEventListener('keydown', (event) => {
@@ -964,6 +919,7 @@ def render_ws_control_page() -> str:
             void sendTtsMessage();
         }
     });
+
     onlineTtsInputEl.addEventListener('input', updateSendOnlineTtsButtonState);
     onlineTtsInputEl.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
@@ -971,14 +927,15 @@ def render_ws_control_page() -> str:
             void sendOnlineTtsMessage();
         }
     });
+
     onlineTtsShortcutSelectEl.addEventListener('change', () => {
-        const message = onlineTtsShortcutSelectEl.value;
-        if (message) {
-            onlineTtsInputEl.value = message;
+        const filename = onlineTtsShortcutSelectEl.value;
+        renderOnlineAudioLibrary(filename);
+        if (filename) {
+            void playLibraryAudio(filename);
         }
-        renderOnlineTtsShortcuts(message);
-        updateSendOnlineTtsButtonState();
     });
+
     ttsShortcutSelectEl.addEventListener('change', () => {
         const message = ttsShortcutSelectEl.value;
         if (message) {
@@ -987,6 +944,7 @@ def render_ws_control_page() -> str:
         renderTtsShortcuts(message);
         updateSendTtsButtonState();
     });
+
     addTtsShortcutBtn.addEventListener('click', addCurrentTtsShortcut);
     deleteTtsShortcutBtn.addEventListener('click', deleteSelectedTtsShortcut);
 
@@ -994,19 +952,20 @@ def render_ws_control_page() -> str:
     modeButtons.mode2.addEventListener('click', () => switchAiMode('mode2'));
     modeButtons.mode3.addEventListener('click', () => switchAiMode('mode3'));
 
-    updateSendBubbleButtonState();
     renderTtsShortcuts();
-    renderOnlineTtsShortcuts();
+    renderOnlineAudioLibrary();
     updateSendTtsButtonState();
     updateSendOnlineTtsButtonState();
     refreshDeviceStatus(false);
     refreshAiMode(false);
     refreshOnlineTtsConfig(false);
-    
+    refreshOnlineAudioLibrary(false);
+
     window.setInterval(() => {
         refreshDeviceStatus(true);
         refreshAiMode(true);
         refreshOnlineTtsConfig(true);
+        refreshOnlineAudioLibrary(true);
     }, 5000);
 </script>
 </body>

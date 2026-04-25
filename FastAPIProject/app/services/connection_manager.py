@@ -37,14 +37,6 @@ class HarmonyConnectionManager:
         )
         return await self.broadcast(message)
 
-    async def send_app_bubble(self, message_text: str) -> int:
-        message = HarmonyAppWebSocketMessage(
-            type="app_bubble",
-            message=message_text,
-            timestamp=now_timestamp_ms(),
-        )
-        return await self.broadcast(message)
-
     async def send_app_tts(self, message_text: str) -> int:
         message = HarmonyAppWebSocketMessage(
             type="app_tts",
