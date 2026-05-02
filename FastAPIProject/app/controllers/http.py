@@ -20,8 +20,8 @@ router = APIRouter()
 POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     "stage1": {
         "mode": "stage1",
-        "title": "阶段一",
-        "message": "能识别，但不能形成有效三维位移",
+        "title": "阶段1",
+        "message": "已识别，左侧骨骼正常，右侧模型静止无反馈",
         "phase": "running",
         "bodyDetected": True,
         "trackingReady": False,
@@ -30,28 +30,18 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     },
     "stage2": {
         "mode": "stage2",
-        "title": "阶段二",
-        "message": "能动，但抖动明显、不稳定",
-        "phase": "running",
-        "bodyDetected": True,
-        "trackingReady": False,
-        "cameraActive": True,
-        "demoLocked": True,
-    },
-    "stage3": {
-        "mode": "stage3",
-        "title": "阶段三",
-        "message": "能跟，但模型骨架不贴合、落位不准",
+        "title": "阶段2",
+        "message": "左侧骨骼正常，右侧模型动作错乱且无法贴合",
         "phase": "tracking",
         "bodyDetected": True,
         "trackingReady": True,
         "cameraActive": True,
         "demoLocked": True,
     },
-    "stage4": {
-        "mode": "stage4",
-        "title": "阶段四",
-        "message": "能展示，但还不能形成标准化分析数据",
+    "stage3": {
+        "mode": "stage3",
+        "title": "阶段3",
+        "message": "左侧骨骼正常，右侧模型跟随迟缓且明显卡顿",
         "phase": "tracking",
         "bodyDetected": True,
         "trackingReady": True,
@@ -60,8 +50,18 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     },
     "normal": {
         "mode": "normal",
-        "title": "回到正常",
-        "message": "退出演示模式，恢复真实实时链路",
+        "title": "阶段4",
+        "message": "恢复正常实时链路",
+        "phase": "ready",
+        "bodyDetected": False,
+        "trackingReady": False,
+        "cameraActive": False,
+        "demoLocked": False,
+    },
+    "stage4": {
+        "mode": "normal",
+        "title": "阶段4",
+        "message": "恢复正常实时链路",
         "phase": "ready",
         "bodyDetected": False,
         "trackingReady": False,
@@ -120,7 +120,7 @@ async def notify_tts(
 ) -> ApiResponse:
     message_text = request.message.strip()
     if message_text == "":
-      return ApiResponse.error(400, "message cannot be empty")
+        return ApiResponse.error(400, "message cannot be empty")
 
     connected_clients = container.connection_manager.get_connected_count()
     delivered_count = await container.connection_manager.send_app_tts(message_text)
@@ -196,6 +196,25 @@ async def notify_posture_demo(
     }
     message = (
         "posture demo command sent"
+        if delivered_count > 0
+        else "no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/ws/harmony/posture-demo-reload", response_model=ApiResponse)
+async def notify_posture_demo_reload(
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    connected_clients = container.connection_manager.get_connected_count()
+    delivered_count = await container.connection_manager.send_posture_demo_reload()
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "posture demo reload sent"
         if delivered_count > 0
         else "no Harmony app websocket clients connected"
     )

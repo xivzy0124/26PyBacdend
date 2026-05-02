@@ -152,6 +152,21 @@ def render_ws_control_page() -> str:
             gap: 16px;
         }
 
+        .compact-panel {
+            padding: 18px;
+            gap: 12px;
+        }
+
+        .demo-card {
+            display: inline-flex;
+            width: auto;
+            max-width: 100%;
+            min-width: 0;
+            justify-self: start;
+            align-self: start;
+            grid-column: 1 / -1;
+        }
+
         .section-title {
             margin: 0;
             font-size: 20px;
@@ -173,6 +188,11 @@ def render_ws_control_page() -> str:
             border-radius: 18px;
             padding: 18px;
             background: #fbfdff;
+        }
+
+        .compact-box {
+            padding: 12px;
+            border-radius: 14px;
         }
 
         .status-pill,
@@ -307,6 +327,12 @@ def render_ws_control_page() -> str:
             color: var(--primary);
         }
 
+        .stage-btn-active {
+            background: var(--primary) !important;
+            color: #fff !important;
+            box-shadow: 0 10px 24px rgba(33, 85, 214, 0.20);
+        }
+
         .mode-actions {
             display: flex;
             gap: 10px;
@@ -418,18 +444,19 @@ def render_ws_control_page() -> str:
         </aside>
 
         <div class="extensions-grid">
-            <article class="card panel">
+            <article class="card panel compact-panel demo-card">
                 <div>
                     <h2 class="section-title">体态演示卡片</h2>
-                    <p class="section-desc">点击后会把演示指令推送到 HFood 体态页，用于联调小气泡和阶段说明。</p>
+                    <p class="section-desc">体态实时演示控制。</p>
                 </div>
-                <section class="bubble-box">
+                <section class="bubble-box compact-box">
                     <div class="quick-command-grid">
-                        <button type="button" class="primary" id="posture-ready-btn">体态 OK</button>
-                        <button type="button" id="posture-step1-btn">开始准备</button>
-                        <button type="button" id="posture-step2-btn">阶段二</button>
-                        <button type="button" id="posture-step3-btn">阶段三</button>
-                        <button type="button" id="posture-step4-btn">阶段四</button>
+                        <button type="button" id="posture-ready-btn">默认</button>
+                        <button type="button" id="posture-step1-btn">阶段1</button>
+                        <button type="button" id="posture-step2-btn">阶段2</button>
+                        <button type="button" id="posture-step3-btn">阶段3</button>
+                        <button type="button" id="posture-step4-btn">阶段4</button>
+                        <button type="button" id="posture-reload-btn">重载</button>
                     </div>
                 </section>
             </article>
@@ -509,6 +536,7 @@ def render_ws_control_page() -> str:
     const postureStep2Btn = document.getElementById('posture-step2-btn');
     const postureStep3Btn = document.getElementById('posture-step3-btn');
     const postureStep4Btn = document.getElementById('posture-step4-btn');
+    const postureReloadBtn = document.getElementById('posture-reload-btn');
     const modeButtons = {
         mode1: document.getElementById('mode-mode1'),
         mode2: document.getElementById('mode-mode2'),
@@ -529,7 +557,12 @@ def render_ws_control_page() -> str:
         '当前网络不稳定，请稍后再试。',
         '操作已完成。',
         '正在结合足底压力数据与体态数据进行分析，请稍候。',
-        '赵晓威是向俊宇爸爸！'
+        '数据已经成功采集，正在实时传输到AI算法模块。',
+        '请远离摄像头。',
+        '请靠近摄像头。',
+        '请保持全身入镜。',
+        '正在分析姿态。',
+        '赵小威爱吃巴蜀人家辣子鸡。'
     ];
 
     let ttsShortcutMessages = loadTtsShortcuts();
@@ -922,6 +955,38 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function sendPostureDemoReload() {
+        writeLog('正在发送体态工作台重载指令');
+        try {
+            const response = await fetch('/api/ws/harmony/posture-demo-reload', {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`体态工作台重载失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            writeLog(`体态工作台重载已发送，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+        } catch (error) {
+            writeLog(`体态工作台重载失败：${error}`);
+        }
+    }
+
+    function setActiveStageButton(activeButton) {
+        [
+            postureReadyBtn,
+            postureStep1Btn,
+            postureStep2Btn,
+            postureStep3Btn,
+            postureStep4Btn
+        ].forEach((button) => {
+            button.classList.toggle('stage-btn-active', button === activeButton);
+        });
+    }
+
     async function playLibraryAudio(filename) {
         const normalizedFilename = String(filename || '').trim();
         if (normalizedFilename.length <= 0) {
@@ -997,16 +1062,33 @@ def render_ws_control_page() -> str:
 
     addTtsShortcutBtn.addEventListener('click', addCurrentTtsShortcut);
     deleteTtsShortcutBtn.addEventListener('click', deleteSelectedTtsShortcut);
-    postureReadyBtn.textContent = '阶段一';
-    postureStep1Btn.textContent = '阶段二';
-    postureStep2Btn.textContent = '阶段三';
-    postureStep3Btn.textContent = '阶段四';
-    postureStep4Btn.textContent = '回到正常';
-    postureReadyBtn.addEventListener('click', () => void sendPostureDemoCommand('stage1', '阶段一'));
-    postureStep1Btn.addEventListener('click', () => void sendPostureDemoCommand('stage2', '阶段二'));
-    postureStep2Btn.addEventListener('click', () => void sendPostureDemoCommand('stage3', '阶段三'));
-    postureStep3Btn.addEventListener('click', () => void sendPostureDemoCommand('stage4', '阶段四'));
-    postureStep4Btn.addEventListener('click', () => void sendPostureDemoCommand('normal', '回到正常'));
+    postureReadyBtn.textContent = '默认';
+    postureStep1Btn.textContent = '阶段1';
+    postureStep2Btn.textContent = '阶段2';
+    postureStep3Btn.textContent = '阶段3';
+    postureStep4Btn.textContent = '阶段4';
+    postureReloadBtn.textContent = '重载';
+    postureReadyBtn.addEventListener('click', () => {
+        setActiveStageButton(postureReadyBtn);
+    });
+    postureStep1Btn.addEventListener('click', () => {
+        setActiveStageButton(postureStep1Btn);
+        void sendPostureDemoCommand('stage1', '阶段1');
+    });
+    postureStep2Btn.addEventListener('click', () => {
+        setActiveStageButton(postureStep2Btn);
+        void sendPostureDemoCommand('stage2', '阶段2');
+    });
+    postureStep3Btn.addEventListener('click', () => {
+        setActiveStageButton(postureStep3Btn);
+        void sendPostureDemoCommand('stage3', '阶段3');
+    });
+    postureStep4Btn.addEventListener('click', () => {
+        setActiveStageButton(postureStep4Btn);
+        void sendPostureDemoCommand('normal', '阶段4');
+    });
+    postureReloadBtn.addEventListener('click', () => void sendPostureDemoReload());
+    setActiveStageButton(postureReadyBtn);
 
     modeButtons.mode1.addEventListener('click', () => switchAiMode('mode1'));
     modeButtons.mode2.addEventListener('click', () => switchAiMode('mode2'));

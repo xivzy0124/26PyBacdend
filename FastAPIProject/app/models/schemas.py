@@ -61,6 +61,7 @@ class HarmonyAppWebSocketMessage(BaseModel):
     postureDemoTrackingReady: bool | None = None
     postureDemoCameraActive: bool | None = None
     postureDemoLocked: bool | None = None
+    postureDemoReload: bool | None = None
 
 
 class BubbleMessageRequest(BaseModel):

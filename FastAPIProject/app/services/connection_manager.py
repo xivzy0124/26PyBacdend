@@ -93,6 +93,15 @@ class HarmonyConnectionManager:
         )
         return await self.broadcast(message)
 
+    async def send_posture_demo_reload(self) -> int:
+        message = HarmonyAppWebSocketMessage(
+            type="posture_demo_reload",
+            message="reload posture workbench",
+            timestamp=now_timestamp_ms(),
+            postureDemoReload=True,
+        )
+        return await self.broadcast(message)
+
     async def broadcast(self, message: HarmonyAppWebSocketMessage) -> int:
         self._cleanup_closed_sessions()
         with self._lock:
