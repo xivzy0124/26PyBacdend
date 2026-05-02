@@ -20,6 +20,9 @@ async def harmony_app_socket(websocket: WebSocket) -> None:
         await websocket.send_json(
             container.ai_mode_service.build_mode_changed_message().model_dump(exclude_none=True)
         )
+        await websocket.send_json(
+            container.pressure_demo_mode_service.build_mode_changed_message().model_dump(exclude_none=True)
+        )
         while True:
             payload_text = await websocket.receive_text()
             heartbeat_reply = build_heartbeat_ack(payload_text)

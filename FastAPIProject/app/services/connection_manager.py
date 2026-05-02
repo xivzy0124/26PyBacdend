@@ -102,6 +102,22 @@ class HarmonyConnectionManager:
         )
         return await self.broadcast(message)
 
+    async def send_pressure_demo_mode_changed(
+        self,
+        mode: str,
+        mode_label: str,
+        mode_description: str,
+    ) -> int:
+        message = HarmonyAppWebSocketMessage(
+            type="pressure_demo_mode_changed",
+            message=f"Pressure demo mode switched to {mode_label}",
+            timestamp=now_timestamp_ms(),
+            pressureDemoMode=mode,
+            pressureDemoModeLabel=mode_label,
+            pressureDemoModeDescription=mode_description,
+        )
+        return await self.broadcast(message)
+
     async def broadcast(self, message: HarmonyAppWebSocketMessage) -> int:
         self._cleanup_closed_sessions()
         with self._lock:

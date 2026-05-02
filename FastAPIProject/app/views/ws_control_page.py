@@ -230,6 +230,21 @@ def render_ws_control_page() -> str:
             color: var(--success);
         }
 
+        .mode-pill.empty {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .mode-pill.direct {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .mode-pill.repair {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+
         .mode-pill.unknown {
             background: #eef2f7;
             color: #526075;
@@ -399,6 +414,11 @@ def render_ws_control_page() -> str:
                 <div class="mini-hint" id="mode-description-large">等待后端返回模式说明。</div>
             </div>
             <div class="mini-card">
+                <div class="mini-label">当前足压模式</div>
+                <div class="mini-value" id="pressure-mode-label-large">模式 2</div>
+                <div class="mini-hint" id="pressure-mode-description-large">等待后端返回足压模式说明。</div>
+            </div>
+            <div class="mini-card">
                 <div class="mini-label">WebSocket 路径</div>
                 <div class="mini-value" id="socket-path">/ws/harmony-app</div>
                 <div class="mini-hint">鸿蒙端应用通过该路径接收控制消息。</div>
@@ -427,6 +447,18 @@ def render_ws_control_page() -> str:
                     <button type="button" id="mode-mode1" class="active-mode">模式 1</button>
                     <button type="button" id="mode-mode2">模式 2</button>
                     <button type="button" id="mode-mode3">模式 3</button>
+                </div>
+            </section>
+
+            <section class="mode-box">
+                <div class="row">
+                    <span class="mode-pill direct" id="pressure-mode-pill">模式 2</span>
+                </div>
+                <p class="section-desc" id="pressure-mode-description">等待后端返回足压模式说明。</p>
+                <div class="mode-actions">
+                    <button type="button" id="pressure-mode-empty">模式 1 空白</button>
+                    <button type="button" id="pressure-mode-direct" class="active-mode">模式 2 直出</button>
+                    <button type="button" id="pressure-mode-repair">模式 3 修复</button>
                 </div>
             </section>
 
@@ -518,6 +550,10 @@ def render_ws_control_page() -> str:
     const modeDescriptionLargeEl = document.getElementById('mode-description-large');
     const modePillEl = document.getElementById('mode-pill');
     const modeDescriptionEl = document.getElementById('mode-description');
+    const pressureModeLabelLargeEl = document.getElementById('pressure-mode-label-large');
+    const pressureModeDescriptionLargeEl = document.getElementById('pressure-mode-description-large');
+    const pressureModePillEl = document.getElementById('pressure-mode-pill');
+    const pressureModeDescriptionEl = document.getElementById('pressure-mode-description');
     const ttsInputEl = document.getElementById('tts-input');
     const sendTtsBtn = document.getElementById('send-tts-btn');
     const onlineTtsInputEl = document.getElementById('online-tts-input');
@@ -537,10 +573,15 @@ def render_ws_control_page() -> str:
     const postureStep3Btn = document.getElementById('posture-step3-btn');
     const postureStep4Btn = document.getElementById('posture-step4-btn');
     const postureReloadBtn = document.getElementById('posture-reload-btn');
-    const modeButtons = {
+    const aiModeButtons = {
         mode1: document.getElementById('mode-mode1'),
         mode2: document.getElementById('mode-mode2'),
         mode3: document.getElementById('mode-mode3')
+    };
+    const pressureModeButtons = {
+        empty: document.getElementById('pressure-mode-empty'),
+        direct: document.getElementById('pressure-mode-direct'),
+        repair: document.getElementById('pressure-mode-repair')
     };
 
     const SHANGHAI_TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
@@ -609,12 +650,30 @@ def render_ws_control_page() -> str:
         modeLabelLargeEl.textContent = modeLabel;
         modeDescriptionLargeEl.textContent = modeDescription;
         modePillEl.textContent = modeLabel;
-        modePillEl.className = Object.prototype.hasOwnProperty.call(modeButtons, mode)
+        modePillEl.className = Object.prototype.hasOwnProperty.call(aiModeButtons, mode)
             ? `mode-pill ${mode}`
             : 'mode-pill unknown';
         modeDescriptionEl.textContent = modeDescription;
 
-        Object.entries(modeButtons).forEach(([key, button]) => {
+        Object.entries(aiModeButtons).forEach(([key, button]) => {
+            button.classList.toggle('active-mode', key === mode);
+        });
+    }
+
+    function renderPressureDemoMode(data) {
+        const mode = data.mode || 'direct';
+        const modeLabel = data.modeLabel || '模式 2';
+        const modeDescription = data.modeDescription || '等待后端返回足压模式说明。';
+
+        pressureModeLabelLargeEl.textContent = modeLabel;
+        pressureModeDescriptionLargeEl.textContent = modeDescription;
+        pressureModePillEl.textContent = modeLabel;
+        pressureModePillEl.className = Object.prototype.hasOwnProperty.call(pressureModeButtons, mode)
+            ? `mode-pill ${mode}`
+            : 'mode-pill unknown';
+        pressureModeDescriptionEl.textContent = modeDescription;
+
+        Object.entries(pressureModeButtons).forEach(([key, button]) => {
             button.classList.toggle('active-mode', key === mode);
         });
     }
@@ -769,6 +828,23 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function refreshPressureDemoMode(silent = true) {
+        try {
+            const response = await fetch('/api/pressure/demo-mode', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            renderPressureDemoMode(result.data || {});
+            if (!silent) {
+                const data = result.data || {};
+                writeLog(`足压模式已刷新，当前为 ${(data.modeLabel || data.mode || '模式 2')}。`);
+            }
+        } catch (error) {
+            writeLog(`足压模式刷新失败：${error}`);
+        }
+    }
+
     async function refreshOnlineTtsConfig(silent = true) {
         try {
             const response = await fetch('/api/tts/online/config', {
@@ -811,7 +887,7 @@ def render_ws_control_page() -> str:
     }
 
     async function switchAiMode(mode) {
-        const buttons = Object.values(modeButtons);
+        const buttons = Object.values(aiModeButtons);
         buttons.forEach(button => button.disabled = true);
         writeLog(`正在切换 AI 模式到 ${mode}...`);
 
@@ -829,6 +905,30 @@ def render_ws_control_page() -> str:
             writeLog(`切换成功：${(result.data && result.data.modeLabel) || mode}`);
         } catch (error) {
             writeLog(`切换 AI 模式失败：${error}`);
+        } finally {
+            buttons.forEach(button => button.disabled = false);
+        }
+    }
+
+    async function switchPressureDemoMode(mode) {
+        const buttons = Object.values(pressureModeButtons);
+        buttons.forEach(button => button.disabled = true);
+        writeLog(`正在切换足压模式到 ${mode}...`);
+
+        try {
+            const response = await fetch(`/api/pressure/demo-mode?mode=${encodeURIComponent(mode)}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`足压模式切换失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            renderPressureDemoMode(result.data || {});
+            writeLog(`足压模式切换成功：${(result.data && result.data.modeLabel) || mode}`);
+        } catch (error) {
+            writeLog(`足压模式切换失败：${error}`);
         } finally {
             buttons.forEach(button => button.disabled = false);
         }
@@ -1019,6 +1119,7 @@ def render_ws_control_page() -> str:
     refreshBtn.addEventListener('click', async () => {
         await refreshDeviceStatus(false);
         await refreshAiMode(false);
+        await refreshPressureDemoMode(false);
         await refreshOnlineTtsConfig(false);
         await refreshOnlineAudioLibrary(false);
     });
@@ -1090,9 +1191,12 @@ def render_ws_control_page() -> str:
     postureReloadBtn.addEventListener('click', () => void sendPostureDemoReload());
     setActiveStageButton(postureReadyBtn);
 
-    modeButtons.mode1.addEventListener('click', () => switchAiMode('mode1'));
-    modeButtons.mode2.addEventListener('click', () => switchAiMode('mode2'));
-    modeButtons.mode3.addEventListener('click', () => switchAiMode('mode3'));
+    aiModeButtons.mode1.addEventListener('click', () => switchAiMode('mode1'));
+    aiModeButtons.mode2.addEventListener('click', () => switchAiMode('mode2'));
+    aiModeButtons.mode3.addEventListener('click', () => switchAiMode('mode3'));
+    pressureModeButtons.empty.addEventListener('click', () => switchPressureDemoMode('empty'));
+    pressureModeButtons.direct.addEventListener('click', () => switchPressureDemoMode('direct'));
+    pressureModeButtons.repair.addEventListener('click', () => switchPressureDemoMode('repair'));
 
     renderTtsShortcuts();
     renderOnlineAudioLibrary();
@@ -1100,12 +1204,14 @@ def render_ws_control_page() -> str:
     updateSendOnlineTtsButtonState();
     refreshDeviceStatus(false);
     refreshAiMode(false);
+    refreshPressureDemoMode(false);
     refreshOnlineTtsConfig(false);
     refreshOnlineAudioLibrary(false);
 
     window.setInterval(() => {
         refreshDeviceStatus(true);
         refreshAiMode(true);
+        refreshPressureDemoMode(true);
         refreshOnlineTtsConfig(true);
         refreshOnlineAudioLibrary(true);
     }, 5000);
