@@ -54,10 +54,21 @@ class HarmonyAppWebSocketMessage(BaseModel):
     mode: str | None = None
     modeLabel: str | None = None
     modeDescription: str | None = None
+    postureDemoMode: str | None = None
+    postureDemoTitle: str | None = None
+    postureDemoPhase: str | None = None
+    postureDemoBodyDetected: bool | None = None
+    postureDemoTrackingReady: bool | None = None
+    postureDemoCameraActive: bool | None = None
+    postureDemoLocked: bool | None = None
 
 
 class BubbleMessageRequest(BaseModel):
     message: str
+
+
+class PostureDemoCommandRequest(BaseModel):
+    action: str
 
 
 class OnlineTtsRequest(BaseModel):

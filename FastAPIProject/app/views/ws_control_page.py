@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 
 def render_ws_control_page() -> str:
@@ -420,6 +420,22 @@ def render_ws_control_page() -> str:
         <div class="extensions-grid">
             <article class="card panel">
                 <div>
+                    <h2 class="section-title">体态演示卡片</h2>
+                    <p class="section-desc">点击后会把演示指令推送到 HFood 体态页，用于联调小气泡和阶段说明。</p>
+                </div>
+                <section class="bubble-box">
+                    <div class="quick-command-grid">
+                        <button type="button" class="primary" id="posture-ready-btn">体态 OK</button>
+                        <button type="button" id="posture-step1-btn">开始准备</button>
+                        <button type="button" id="posture-step2-btn">阶段二</button>
+                        <button type="button" id="posture-step3-btn">阶段三</button>
+                        <button type="button" id="posture-step4-btn">阶段四</button>
+                    </div>
+                </section>
+            </article>
+
+            <article class="card panel">
+                <div>
                     <h2 class="section-title">鸿蒙端 TTS 语音</h2>
                     <p class="section-desc">这里发送的是鸿蒙设备本地 TTS，会直接调用设备侧语音播报能力。</p>
                 </div>
@@ -488,6 +504,11 @@ def render_ws_control_page() -> str:
     const logBodyEl = document.getElementById('log-body');
     const testBtn = document.getElementById('test-btn');
     const refreshBtn = document.getElementById('refresh-btn');
+    const postureReadyBtn = document.getElementById('posture-ready-btn');
+    const postureStep1Btn = document.getElementById('posture-step1-btn');
+    const postureStep2Btn = document.getElementById('posture-step2-btn');
+    const postureStep3Btn = document.getElementById('posture-step3-btn');
+    const postureStep4Btn = document.getElementById('posture-step4-btn');
     const modeButtons = {
         mode1: document.getElementById('mode-mode1'),
         mode2: document.getElementById('mode-mode2'),
@@ -872,6 +893,35 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function sendPostureDemoCommand(action, label) {
+        const normalizedAction = String(action || '').trim();
+        if (normalizedAction.length <= 0) {
+            return;
+        }
+
+        writeLog(`正在发送体态演示指令：${label}`);
+        try {
+            const response = await fetch('/api/ws/harmony/posture-demo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: normalizedAction })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`体态演示指令失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            writeLog(`体态演示已发送：${data.title || label}，${data.message || ''}`);
+        } catch (error) {
+            writeLog(`体态演示指令失败：${error}`);
+        }
+    }
+
     async function playLibraryAudio(filename) {
         const normalizedFilename = String(filename || '').trim();
         if (normalizedFilename.length <= 0) {
@@ -947,6 +997,16 @@ def render_ws_control_page() -> str:
 
     addTtsShortcutBtn.addEventListener('click', addCurrentTtsShortcut);
     deleteTtsShortcutBtn.addEventListener('click', deleteSelectedTtsShortcut);
+    postureReadyBtn.textContent = '阶段一';
+    postureStep1Btn.textContent = '阶段二';
+    postureStep2Btn.textContent = '阶段三';
+    postureStep3Btn.textContent = '阶段四';
+    postureStep4Btn.textContent = '回到正常';
+    postureReadyBtn.addEventListener('click', () => void sendPostureDemoCommand('stage1', '阶段一'));
+    postureStep1Btn.addEventListener('click', () => void sendPostureDemoCommand('stage2', '阶段二'));
+    postureStep2Btn.addEventListener('click', () => void sendPostureDemoCommand('stage3', '阶段三'));
+    postureStep3Btn.addEventListener('click', () => void sendPostureDemoCommand('stage4', '阶段四'));
+    postureStep4Btn.addEventListener('click', () => void sendPostureDemoCommand('normal', '回到正常'));
 
     modeButtons.mode1.addEventListener('click', () => switchAiMode('mode1'));
     modeButtons.mode2.addEventListener('click', () => switchAiMode('mode2'));
@@ -970,3 +1030,4 @@ def render_ws_control_page() -> str:
 </script>
 </body>
 </html>"""
+

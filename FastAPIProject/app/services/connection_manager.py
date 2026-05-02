@@ -45,6 +45,14 @@ class HarmonyConnectionManager:
         )
         return await self.broadcast(message)
 
+    async def send_app_bubble(self, message_text: str) -> int:
+        message = HarmonyAppWebSocketMessage(
+            type="app_bubble",
+            message=message_text,
+            timestamp=now_timestamp_ms(),
+        )
+        return await self.broadcast(message)
+
     async def send_app_audio_play(
         self,
         audio_url: str,
@@ -57,6 +65,31 @@ class HarmonyConnectionManager:
             audioUrl=audio_url,
             audioContentType=audio_content_type,
             timestamp=now_timestamp_ms(),
+        )
+        return await self.broadcast(message)
+
+    async def send_posture_demo_command(
+        self,
+        mode: str,
+        title: str,
+        message_text: str,
+        phase: str,
+        body_detected: bool,
+        tracking_ready: bool,
+        camera_active: bool,
+        demo_locked: bool,
+    ) -> int:
+        message = HarmonyAppWebSocketMessage(
+            type="posture_demo_control",
+            message=message_text,
+            timestamp=now_timestamp_ms(),
+            postureDemoMode=mode,
+            postureDemoTitle=title,
+            postureDemoPhase=phase,
+            postureDemoBodyDetected=body_detected,
+            postureDemoTrackingReady=tracking_ready,
+            postureDemoCameraActive=camera_active,
+            postureDemoLocked=demo_locked,
         )
         return await self.broadcast(message)
 

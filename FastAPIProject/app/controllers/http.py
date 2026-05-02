@@ -5,10 +5,70 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.container import AppContainer, get_container_from_request
 from app.core.config import settings
-from app.models.schemas import ApiResponse, BubbleMessageRequest, LibraryAudioPlayRequest, OnlineTtsRequest
+from app.models.schemas import (
+    ApiResponse,
+    BubbleMessageRequest,
+    LibraryAudioPlayRequest,
+    OnlineTtsRequest,
+    PostureDemoCommandRequest,
+)
 from app.views.ws_control_page import render_ws_control_page
 
 router = APIRouter()
+
+
+POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
+    "stage1": {
+        "mode": "stage1",
+        "title": "阶段一",
+        "message": "能识别，但不能形成有效三维位移",
+        "phase": "running",
+        "bodyDetected": True,
+        "trackingReady": False,
+        "cameraActive": True,
+        "demoLocked": True,
+    },
+    "stage2": {
+        "mode": "stage2",
+        "title": "阶段二",
+        "message": "能动，但抖动明显、不稳定",
+        "phase": "running",
+        "bodyDetected": True,
+        "trackingReady": False,
+        "cameraActive": True,
+        "demoLocked": True,
+    },
+    "stage3": {
+        "mode": "stage3",
+        "title": "阶段三",
+        "message": "能跟，但模型骨架不贴合、落位不准",
+        "phase": "tracking",
+        "bodyDetected": True,
+        "trackingReady": True,
+        "cameraActive": True,
+        "demoLocked": True,
+    },
+    "stage4": {
+        "mode": "stage4",
+        "title": "阶段四",
+        "message": "能展示，但还不能形成标准化分析数据",
+        "phase": "tracking",
+        "bodyDetected": True,
+        "trackingReady": True,
+        "cameraActive": True,
+        "demoLocked": True,
+    },
+    "normal": {
+        "mode": "normal",
+        "title": "回到正常",
+        "message": "退出演示模式，恢复真实实时链路",
+        "phase": "ready",
+        "bodyDetected": False,
+        "trackingReady": False,
+        "cameraActive": False,
+        "demoLocked": False,
+    },
+}
 
 
 @router.get("/", include_in_schema=False)
@@ -60,7 +120,7 @@ async def notify_tts(
 ) -> ApiResponse:
     message_text = request.message.strip()
     if message_text == "":
-        return ApiResponse.error(400, "message cannot be empty")
+      return ApiResponse.error(400, "message cannot be empty")
 
     connected_clients = container.connection_manager.get_connected_count()
     delivered_count = await container.connection_manager.send_app_tts(message_text)
@@ -72,6 +132,70 @@ async def notify_tts(
     }
     message = (
         "app tts notification sent"
+        if delivered_count > 0
+        else "no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/ws/harmony/notify-bubble", response_model=ApiResponse)
+async def notify_bubble(
+    request: BubbleMessageRequest,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    message_text = request.message.strip()
+    if message_text == "":
+        return ApiResponse.error(400, "message cannot be empty")
+
+    connected_clients = container.connection_manager.get_connected_count()
+    delivered_count = await container.connection_manager.send_app_bubble(message_text)
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "message": message_text,
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "app bubble notification sent"
+        if delivered_count > 0
+        else "no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/ws/harmony/posture-demo", response_model=ApiResponse)
+async def notify_posture_demo(
+    payload: PostureDemoCommandRequest,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    action = payload.action.strip().lower()
+    demo_preset = POSTURE_DEMO_PRESETS.get(action)
+    if demo_preset is None:
+        return ApiResponse.error(400, f"unsupported posture demo action: {payload.action}")
+
+    connected_clients = container.connection_manager.get_connected_count()
+    delivered_count = await container.connection_manager.send_posture_demo_command(
+        mode=str(demo_preset["mode"]),
+        title=str(demo_preset["title"]),
+        message_text=str(demo_preset["message"]),
+        phase=str(demo_preset["phase"]),
+        body_detected=bool(demo_preset["bodyDetected"]),
+        tracking_ready=bool(demo_preset["trackingReady"]),
+        camera_active=bool(demo_preset["cameraActive"]),
+        demo_locked=bool(demo_preset["demoLocked"]),
+    )
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "action": action,
+        "mode": demo_preset["mode"],
+        "title": demo_preset["title"],
+        "message": demo_preset["message"],
+        "phase": demo_preset["phase"],
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "posture demo command sent"
         if delivered_count > 0
         else "no Harmony app websocket clients connected"
     )
@@ -191,7 +315,7 @@ async def get_ai_mode(
 
 @router.post("/api/ai/mode", response_model=ApiResponse)
 async def update_ai_mode(
-    mode: str = Query(..., description="模式代码：mode1/mode2/mode3"),
+    mode: str = Query(..., description="mode code: mode1/mode2/mode3"),
     container: AppContainer = Depends(get_container_from_request),
 ) -> ApiResponse:
     try:
