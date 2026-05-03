@@ -484,6 +484,7 @@ def render_ws_control_page() -> str:
                 <section class="bubble-box compact-box">
                     <div class="quick-command-grid">
                         <button type="button" id="posture-ready-btn">默认</button>
+                        <button type="button" id="posture-render-btn">渲染</button>
                         <button type="button" id="posture-step1-btn">阶段1</button>
                         <button type="button" id="posture-step2-btn">阶段2</button>
                         <button type="button" id="posture-step3-btn">阶段3</button>
@@ -568,6 +569,7 @@ def render_ws_control_page() -> str:
     const testBtn = document.getElementById('test-btn');
     const refreshBtn = document.getElementById('refresh-btn');
     const postureReadyBtn = document.getElementById('posture-ready-btn');
+    const postureRenderBtn = document.getElementById('posture-render-btn');
     const postureStep1Btn = document.getElementById('posture-step1-btn');
     const postureStep2Btn = document.getElementById('posture-step2-btn');
     const postureStep3Btn = document.getElementById('posture-step3-btn');
@@ -1078,6 +1080,7 @@ def render_ws_control_page() -> str:
     function setActiveStageButton(activeButton) {
         [
             postureReadyBtn,
+            postureRenderBtn,
             postureStep1Btn,
             postureStep2Btn,
             postureStep3Btn,
@@ -1164,6 +1167,7 @@ def render_ws_control_page() -> str:
     addTtsShortcutBtn.addEventListener('click', addCurrentTtsShortcut);
     deleteTtsShortcutBtn.addEventListener('click', deleteSelectedTtsShortcut);
     postureReadyBtn.textContent = '默认';
+    postureRenderBtn.textContent = '渲染';
     postureStep1Btn.textContent = '阶段1';
     postureStep2Btn.textContent = '阶段2';
     postureStep3Btn.textContent = '阶段3';
@@ -1171,6 +1175,11 @@ def render_ws_control_page() -> str:
     postureReloadBtn.textContent = '重载';
     postureReadyBtn.addEventListener('click', () => {
         setActiveStageButton(postureReadyBtn);
+        void sendPostureDemoCommand('normal', '默认');
+    });
+    postureRenderBtn.addEventListener('click', () => {
+        setActiveStageButton(postureRenderBtn);
+        void sendPostureDemoCommand('render', '渲染');
     });
     postureStep1Btn.addEventListener('click', () => {
         setActiveStageButton(postureStep1Btn);

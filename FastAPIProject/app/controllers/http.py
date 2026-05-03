@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -18,10 +18,20 @@ router = APIRouter()
 
 
 POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
+    "render": {
+        "mode": "stage1",
+        "title": "渲染",
+        "message": "已进入初始渲染阶段，模型保持默认站姿，等待后续阶段控制",
+        "phase": "running",
+        "bodyDetected": True,
+        "trackingReady": False,
+        "cameraActive": True,
+        "demoLocked": True,
+    },
     "stage1": {
         "mode": "stage1",
-        "title": "阶段1",
-        "message": "已识别，左侧骨骼正常，右侧模型静止无反馈",
+        "title": "闃舵1",
+        "message": "宸茶瘑鍒紝宸︿晶楠ㄩ姝ｅ父锛屽彸渚фā鍨嬮潤姝㈡棤鍙嶉",
         "phase": "running",
         "bodyDetected": True,
         "trackingReady": False,
@@ -30,8 +40,8 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     },
     "stage2": {
         "mode": "stage2",
-        "title": "阶段2",
-        "message": "左侧骨骼正常，右侧模型动作错乱且无法贴合",
+        "title": "闃舵2",
+        "message": "宸︿晶楠ㄩ姝ｅ父锛屽彸渚фā鍨嬪姩浣滈敊涔变笖鏃犳硶璐村悎",
         "phase": "tracking",
         "bodyDetected": True,
         "trackingReady": True,
@@ -40,8 +50,8 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     },
     "stage3": {
         "mode": "stage3",
-        "title": "阶段3",
-        "message": "左侧骨骼正常，右侧模型跟随迟缓且明显卡顿",
+        "title": "闃舵3",
+        "message": "宸︿晶楠ㄩ姝ｅ父锛屽彸渚фā鍨嬭窡闅忚繜缂撲笖鏄庢樉鍗￠】",
         "phase": "tracking",
         "bodyDetected": True,
         "trackingReady": True,
@@ -50,8 +60,8 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     },
     "normal": {
         "mode": "normal",
-        "title": "阶段4",
-        "message": "恢复正常实时链路",
+        "title": "默认",
+        "message": "鎭㈠姝ｅ父瀹炴椂閾捐矾",
         "phase": "ready",
         "bodyDetected": False,
         "trackingReady": False,
@@ -60,8 +70,8 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     },
     "stage4": {
         "mode": "normal",
-        "title": "阶段4",
-        "message": "恢复正常实时链路",
+        "title": "闃舵4",
+        "message": "鎭㈠姝ｅ父瀹炴椂閾捐矾",
         "phase": "ready",
         "bodyDetected": False,
         "trackingReady": False,
@@ -374,3 +384,4 @@ def build_public_asset_url(request: Request, relative_url: str) -> str:
     if configured_base_url != "":
         return f"{configured_base_url.rstrip('/')}{relative_url}"
     return f"{str(request.base_url).rstrip('/')}{relative_url}"
+
