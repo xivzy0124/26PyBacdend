@@ -485,7 +485,6 @@ def render_ws_control_page() -> str:
                     <div class="quick-command-grid">
                         <button type="button" id="posture-ready-btn">默认</button>
                         <button type="button" id="posture-render-btn">渲染</button>
-                        <button type="button" id="posture-step1-btn">阶段1</button>
                         <button type="button" id="posture-step2-btn">阶段2</button>
                         <button type="button" id="posture-step3-btn">阶段3</button>
                         <button type="button" id="posture-step4-btn">阶段4</button>
@@ -570,7 +569,6 @@ def render_ws_control_page() -> str:
     const refreshBtn = document.getElementById('refresh-btn');
     const postureReadyBtn = document.getElementById('posture-ready-btn');
     const postureRenderBtn = document.getElementById('posture-render-btn');
-    const postureStep1Btn = document.getElementById('posture-step1-btn');
     const postureStep2Btn = document.getElementById('posture-step2-btn');
     const postureStep3Btn = document.getElementById('posture-step3-btn');
     const postureStep4Btn = document.getElementById('posture-step4-btn');
@@ -1051,7 +1049,11 @@ def render_ws_control_page() -> str:
 
             const data = result.data || {};
             renderDeviceStatus(Number(data.connectedClients || 0));
-            writeLog(`体态演示已发送：${data.title || label}，${data.message || ''}`);
+            if (Number(data.deliveredCount || 0) <= 0) {
+                writeLog(`体态演示未投递到设备：${data.title || label}，当前无在线设备连接。`);
+                return;
+            }
+            writeLog(`体态动作已发送：${data.action || action} -> ${data.title || label}，${data.message || ''}`);
         } catch (error) {
             writeLog(`体态演示指令失败：${error}`);
         }
@@ -1081,7 +1083,6 @@ def render_ws_control_page() -> str:
         [
             postureReadyBtn,
             postureRenderBtn,
-            postureStep1Btn,
             postureStep2Btn,
             postureStep3Btn,
             postureStep4Btn
@@ -1168,7 +1169,6 @@ def render_ws_control_page() -> str:
     deleteTtsShortcutBtn.addEventListener('click', deleteSelectedTtsShortcut);
     postureReadyBtn.textContent = '默认';
     postureRenderBtn.textContent = '渲染';
-    postureStep1Btn.textContent = '阶段1';
     postureStep2Btn.textContent = '阶段2';
     postureStep3Btn.textContent = '阶段3';
     postureStep4Btn.textContent = '阶段4';
@@ -1181,10 +1181,6 @@ def render_ws_control_page() -> str:
         setActiveStageButton(postureRenderBtn);
         void sendPostureDemoCommand('render', '渲染');
     });
-    postureStep1Btn.addEventListener('click', () => {
-        setActiveStageButton(postureStep1Btn);
-        void sendPostureDemoCommand('stage1', '阶段1');
-    });
     postureStep2Btn.addEventListener('click', () => {
         setActiveStageButton(postureStep2Btn);
         void sendPostureDemoCommand('stage2', '阶段2');
@@ -1195,7 +1191,7 @@ def render_ws_control_page() -> str:
     });
     postureStep4Btn.addEventListener('click', () => {
         setActiveStageButton(postureStep4Btn);
-        void sendPostureDemoCommand('normal', '阶段4');
+        void sendPostureDemoCommand('stage4', '阶段4');
     });
     postureReloadBtn.addEventListener('click', () => void sendPostureDemoReload());
     setActiveStageButton(postureReadyBtn);
