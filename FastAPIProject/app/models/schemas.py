@@ -45,6 +45,20 @@ class PressureDemoMode(str, Enum):
         raise ValueError(f"Unsupported pressure demo mode: {code}")
 
 
+class PressureTraceDemoMode(str, Enum):
+    NORMAL = "normal"
+    JITTER = "jitter"
+
+    @classmethod
+    def from_code(cls, code: str | None) -> "PressureTraceDemoMode":
+        if code is None or code.strip() == "":
+            return cls.NORMAL
+        for mode in cls:
+            if mode.value == code.strip().lower():
+                return mode
+        raise ValueError(f"Unsupported pressure trace demo mode: {code}")
+
+
 class ApiResponse(BaseModel):
     code: int
     message: str
@@ -80,6 +94,9 @@ class HarmonyAppWebSocketMessage(BaseModel):
     pressureDemoMode: str | None = None
     pressureDemoModeLabel: str | None = None
     pressureDemoModeDescription: str | None = None
+    pressureTraceMode: str | None = None
+    pressureTraceModeLabel: str | None = None
+    pressureTraceModeDescription: str | None = None
 
 
 class BubbleMessageRequest(BaseModel):

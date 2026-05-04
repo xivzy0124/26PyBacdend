@@ -245,6 +245,16 @@ def render_ws_control_page() -> str:
             color: var(--success);
         }
 
+        .mode-pill.normal {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .mode-pill.jitter {
+            background: var(--warn-soft);
+            color: var(--warn);
+        }
+
         .mode-pill.unknown {
             background: #eef2f7;
             color: #526075;
@@ -462,6 +472,17 @@ def render_ws_control_page() -> str:
                 </div>
             </section>
 
+            <section class="mode-box">
+                <div class="row">
+                    <span class="mode-pill normal" id="trace-mode-pill">轨迹正常</span>
+                </div>
+                <p class="section-desc" id="trace-mode-description">等待后端返回轨迹演示说明。</p>
+                <div class="mode-actions">
+                    <button type="button" id="trace-mode-normal" class="active-mode">轨迹正常</button>
+                    <button type="button" id="trace-mode-jitter">轨迹波动</button>
+                </div>
+            </section>
+
             <section class="action-box">
                 <div class="action-grid">
                     <button type="button" id="test-btn">连接测试</button>
@@ -554,6 +575,8 @@ def render_ws_control_page() -> str:
     const pressureModeDescriptionLargeEl = document.getElementById('pressure-mode-description-large');
     const pressureModePillEl = document.getElementById('pressure-mode-pill');
     const pressureModeDescriptionEl = document.getElementById('pressure-mode-description');
+    const traceModePillEl = document.getElementById('trace-mode-pill');
+    const traceModeDescriptionEl = document.getElementById('trace-mode-description');
     const ttsInputEl = document.getElementById('tts-input');
     const sendTtsBtn = document.getElementById('send-tts-btn');
     const onlineTtsInputEl = document.getElementById('online-tts-input');
@@ -582,6 +605,10 @@ def render_ws_control_page() -> str:
         empty: document.getElementById('pressure-mode-empty'),
         direct: document.getElementById('pressure-mode-direct'),
         repair: document.getElementById('pressure-mode-repair')
+    };
+    const traceModeButtons = {
+        normal: document.getElementById('trace-mode-normal'),
+        jitter: document.getElementById('trace-mode-jitter')
     };
 
     const SHANGHAI_TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
@@ -674,6 +701,22 @@ def render_ws_control_page() -> str:
         pressureModeDescriptionEl.textContent = modeDescription;
 
         Object.entries(pressureModeButtons).forEach(([key, button]) => {
+            button.classList.toggle('active-mode', key === mode);
+        });
+    }
+
+    function renderPressureTraceDemoMode(data) {
+        const mode = data.mode || 'normal';
+        const modeLabel = data.modeLabel || '轨迹正常';
+        const modeDescription = data.modeDescription || '等待后端返回轨迹演示说明。';
+
+        traceModePillEl.textContent = modeLabel;
+        traceModePillEl.className = Object.prototype.hasOwnProperty.call(traceModeButtons, mode)
+            ? `mode-pill ${mode}`
+            : 'mode-pill unknown';
+        traceModeDescriptionEl.textContent = modeDescription;
+
+        Object.entries(traceModeButtons).forEach(([key, button]) => {
             button.classList.toggle('active-mode', key === mode);
         });
     }
@@ -845,6 +888,23 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function refreshPressureTraceDemoMode(silent = true) {
+        try {
+            const response = await fetch('/api/pressure/trace-mode', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            renderPressureTraceDemoMode(result.data || {});
+            if (!silent) {
+                const data = result.data || {};
+                writeLog(`轨迹模式已刷新，当前为 ${(data.modeLabel || data.mode || '轨迹正常')}。`);
+            }
+        } catch (error) {
+            writeLog(`轨迹模式刷新失败：${error}`);
+        }
+    }
+
     async function refreshOnlineTtsConfig(silent = true) {
         try {
             const response = await fetch('/api/tts/online/config', {
@@ -929,6 +989,30 @@ def render_ws_control_page() -> str:
             writeLog(`足压模式切换成功：${(result.data && result.data.modeLabel) || mode}`);
         } catch (error) {
             writeLog(`足压模式切换失败：${error}`);
+        } finally {
+            buttons.forEach(button => button.disabled = false);
+        }
+    }
+
+    async function switchPressureTraceDemoMode(mode) {
+        const buttons = Object.values(traceModeButtons);
+        buttons.forEach(button => button.disabled = true);
+        writeLog(`正在切换轨迹模式到 ${mode}...`);
+
+        try {
+            const response = await fetch(`/api/pressure/trace-mode?mode=${encodeURIComponent(mode)}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`轨迹模式切换失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            renderPressureTraceDemoMode(result.data || {});
+            writeLog(`轨迹模式切换成功：${(result.data && result.data.modeLabel) || mode}`);
+        } catch (error) {
+            writeLog(`轨迹模式切换失败：${error}`);
         } finally {
             buttons.forEach(button => button.disabled = false);
         }
@@ -1124,6 +1208,7 @@ def render_ws_control_page() -> str:
         await refreshDeviceStatus(false);
         await refreshAiMode(false);
         await refreshPressureDemoMode(false);
+        await refreshPressureTraceDemoMode(false);
         await refreshOnlineTtsConfig(false);
         await refreshOnlineAudioLibrary(false);
     });
@@ -1202,6 +1287,8 @@ def render_ws_control_page() -> str:
     pressureModeButtons.empty.addEventListener('click', () => switchPressureDemoMode('empty'));
     pressureModeButtons.direct.addEventListener('click', () => switchPressureDemoMode('direct'));
     pressureModeButtons.repair.addEventListener('click', () => switchPressureDemoMode('repair'));
+    traceModeButtons.normal.addEventListener('click', () => switchPressureTraceDemoMode('normal'));
+    traceModeButtons.jitter.addEventListener('click', () => switchPressureTraceDemoMode('jitter'));
 
     renderTtsShortcuts();
     renderOnlineAudioLibrary();
@@ -1210,6 +1297,7 @@ def render_ws_control_page() -> str:
     refreshDeviceStatus(false);
     refreshAiMode(false);
     refreshPressureDemoMode(false);
+    refreshPressureTraceDemoMode(false);
     refreshOnlineTtsConfig(false);
     refreshOnlineAudioLibrary(false);
 
@@ -1217,6 +1305,7 @@ def render_ws_control_page() -> str:
         refreshDeviceStatus(true);
         refreshAiMode(true);
         refreshPressureDemoMode(true);
+        refreshPressureTraceDemoMode(true);
         refreshOnlineTtsConfig(true);
         refreshOnlineAudioLibrary(true);
     }, 5000);

@@ -369,6 +369,28 @@ async def update_pressure_demo_mode(
         return ApiResponse.error(400, str(error))
 
 
+@router.get("/api/pressure/trace-mode", response_model=ApiResponse)
+async def get_pressure_trace_demo_mode(
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    return ApiResponse.success(container.pressure_trace_demo_mode_service.build_mode_payload())
+
+
+@router.post("/api/pressure/trace-mode", response_model=ApiResponse)
+async def update_pressure_trace_demo_mode(
+    mode: str = Query(..., description="pressure trace demo mode: normal/jitter"),
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    try:
+        container.pressure_trace_demo_mode_service.update_mode(mode)
+        mode_payload = container.pressure_trace_demo_mode_service.build_mode_payload()
+        broadcast_message = container.pressure_trace_demo_mode_service.build_mode_changed_message()
+        await container.connection_manager.broadcast(broadcast_message)
+        return ApiResponse.success(mode_payload, broadcast_message.message)
+    except ValueError as error:
+        return ApiResponse.error(400, str(error))
+
+
 def build_public_asset_url(request: Request, relative_url: str) -> str:
     configured_base_url = settings.public_base_url.strip()
     if configured_base_url != "":
