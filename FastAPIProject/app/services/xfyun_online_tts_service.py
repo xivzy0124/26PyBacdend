@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import json
 import os
+import shutil
 from threading import RLock
 from urllib.parse import urlencode
 
@@ -79,10 +80,14 @@ class XfyunOnlineTtsService:
         account_service: XfyunTtsAccountService,
         audio_cache_dir: str | None = None,
         audio_library_dir: str | None = None,
+        audio_cache_url_prefix: str = "/audio-cache",
+        audio_library_url_prefix: str = "/audio-library",
     ) -> None:
         self._account_service = account_service
         self._audio_cache_dir = audio_cache_dir or settings.audio_cache_dir
         self._audio_library_dir = audio_library_dir or settings.audio_library_dir
+        self._audio_cache_url_prefix = audio_cache_url_prefix.rstrip("/")
+        self._audio_library_url_prefix = audio_library_url_prefix.rstrip("/")
         self._audio_cache_max_files = max(1, settings.audio_cache_max_files)
         self._lock = RLock()
         os.makedirs(self._audio_cache_dir, exist_ok=True)
@@ -138,7 +143,7 @@ class XfyunOnlineTtsService:
 
         return GeneratedAudioAsset(
             filename=filename,
-            relative_url=f"/audio-cache/{filename}",
+            relative_url=f"{self._audio_cache_url_prefix}/{filename}",
             content_type="audio/mpeg",
             voice_name=target_vcn,
             message_text=normalized_text,
@@ -158,7 +163,7 @@ class XfyunOnlineTtsService:
                     LibraryAudioAsset(
                         filename=filename,
                         display_name=display_name or filename,
-                        relative_url=f"/audio-library/{filename}",
+                        relative_url=f"{self._audio_library_url_prefix}/{filename}",
                     )
                 )
         library_assets.sort(key=lambda item: item.filename.lower())
@@ -176,7 +181,29 @@ class XfyunOnlineTtsService:
         return LibraryAudioAsset(
             filename=normalized_filename,
             display_name=display_name or normalized_filename,
-            relative_url=f"/audio-library/{normalized_filename}",
+            relative_url=f"{self._audio_library_url_prefix}/{normalized_filename}",
+        )
+
+    def promote_cache_audio_to_library(self, filename: str) -> LibraryAudioAsset:
+        normalized_filename = self._normalize_library_filename(filename)
+        cache_path = os.path.abspath(os.path.join(self._audio_cache_dir, normalized_filename))
+        library_path = os.path.abspath(os.path.join(self._audio_library_dir, normalized_filename))
+        cache_root = os.path.abspath(self._audio_cache_dir)
+        library_root = os.path.abspath(self._audio_library_dir)
+        if os.path.commonpath([cache_root, cache_path]) != cache_root:
+            raise ValueError("invalid audio filename")
+        if os.path.commonpath([library_root, library_path]) != library_root:
+            raise ValueError("invalid audio filename")
+        if not os.path.isfile(cache_path):
+            raise FileNotFoundError(normalized_filename)
+
+        os.makedirs(self._audio_library_dir, exist_ok=True)
+        shutil.copy2(cache_path, library_path)
+        display_name, _ = os.path.splitext(normalized_filename)
+        return LibraryAudioAsset(
+            filename=normalized_filename,
+            display_name=display_name or normalized_filename,
+            relative_url=f"{self._audio_library_url_prefix}/{normalized_filename}",
         )
 
     def _build_auth_query(self, api_key: str, api_secret: str) -> str:

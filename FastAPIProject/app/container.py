@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import Request, WebSocket
 
 from app.services.ai_mode_service import AiModeService
+from app.core.config import settings
 from app.services.connection_manager import HarmonyConnectionManager
 from app.services.pressure_demo_mode_service import PressureDemoModeService
 from app.services.pressure_trace_demo_mode_service import PressureTraceDemoModeService
@@ -17,7 +18,27 @@ class AppContainer:
         self.pressure_demo_mode_service = PressureDemoModeService()
         self.pressure_trace_demo_mode_service = PressureTraceDemoModeService()
         self.xfyun_tts_account_service = XfyunTtsAccountService()
-        self.xfyun_online_tts_service = XfyunOnlineTtsService(self.xfyun_tts_account_service)
+        self.bt_online_tts_service = XfyunOnlineTtsService(
+            self.xfyun_tts_account_service,
+            audio_cache_dir=settings.bt_cache_dir,
+            audio_library_dir=settings.bt_library_dir,
+            audio_cache_url_prefix="/bt_cache",
+            audio_library_url_prefix="/bt_library",
+        )
+        self.cp_online_tts_service = XfyunOnlineTtsService(
+            self.xfyun_tts_account_service,
+            audio_cache_dir=settings.cp_cache_dir,
+            audio_library_dir=settings.cp_library_dir,
+            audio_cache_url_prefix="/cp_cache",
+            audio_library_url_prefix="/cp_library",
+        )
+        self.ai_online_tts_service = XfyunOnlineTtsService(
+            self.xfyun_tts_account_service,
+            audio_cache_dir=settings.ai_cache_dir,
+            audio_library_dir=settings.ai_library_dir,
+            audio_cache_url_prefix="/ai_cache",
+            audio_library_url_prefix="/ai_library",
+        )
 
 
 def get_container_from_request(request: Request) -> AppContainer:

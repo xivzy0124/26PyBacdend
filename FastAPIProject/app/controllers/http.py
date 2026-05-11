@@ -9,6 +9,7 @@ from app.models.schemas import (
     ApiResponse,
     BubbleMessageRequest,
     LibraryAudioPlayRequest,
+    LibraryAudioPromoteRequest,
     OnlineTtsRequest,
     PostureDemoCommandRequest,
 )
@@ -303,19 +304,19 @@ async def notify_demo_posture(
     return ApiResponse.success(data, message)
 
 
-@router.get("/api/tts/online/config", response_model=ApiResponse)
-async def get_online_tts_config(
+@router.get("/api/tts/bt/config", response_model=ApiResponse)
+async def get_bt_online_tts_config(
     container: AppContainer = Depends(get_container_from_request),
 ) -> ApiResponse:
-    return ApiResponse.success(container.xfyun_online_tts_service.build_runtime_payload())
+    return ApiResponse.success(container.bt_online_tts_service.build_runtime_payload())
 
 
-@router.get("/api/tts/online/library", response_model=ApiResponse)
-async def get_online_tts_library(
+@router.get("/api/tts/bt/library", response_model=ApiResponse)
+async def get_bt_online_tts_library(
     request: Request,
     container: AppContainer = Depends(get_container_from_request),
 ) -> ApiResponse:
-    library_assets = container.xfyun_online_tts_service.list_library_audio_assets()
+    library_assets = container.bt_online_tts_service.list_library_audio_assets()
     data = [
         {
             "filename": asset.filename,
@@ -327,8 +328,8 @@ async def get_online_tts_library(
     return ApiResponse.success(data)
 
 
-@router.post("/api/ws/harmony/notify-online-tts", response_model=ApiResponse)
-async def notify_online_tts(
+@router.post("/api/ws/harmony/notify-bt-online-tts", response_model=ApiResponse)
+async def notify_bt_online_tts(
     payload: OnlineTtsRequest,
     request: Request,
     container: AppContainer = Depends(get_container_from_request),
@@ -338,7 +339,7 @@ async def notify_online_tts(
         return ApiResponse.error(400, "message cannot be empty")
 
     try:
-        generated_audio = await container.xfyun_online_tts_service.synthesize_to_cache(
+        generated_audio = await container.bt_online_tts_service.synthesize_to_cache(
             message_text=message_text,
             vcn=(payload.vcn or "").strip() or None,
         )
@@ -371,14 +372,14 @@ async def notify_online_tts(
     return ApiResponse.success(data, message)
 
 
-@router.post("/api/ws/harmony/play-library-audio", response_model=ApiResponse)
-async def play_library_audio(
+@router.post("/api/ws/harmony/play-bt-library-audio", response_model=ApiResponse)
+async def play_bt_library_audio(
     payload: LibraryAudioPlayRequest,
     request: Request,
     container: AppContainer = Depends(get_container_from_request),
 ) -> ApiResponse:
     try:
-        library_audio = container.xfyun_online_tts_service.resolve_library_audio_asset(payload.filename)
+        library_audio = container.bt_online_tts_service.resolve_library_audio_asset(payload.filename)
     except ValueError as error:
         return ApiResponse.error(400, str(error))
     except FileNotFoundError:
@@ -405,6 +406,150 @@ async def play_library_audio(
         else "audio selected but no Harmony app websocket clients connected"
     )
     return ApiResponse.success(data, message)
+
+
+@router.post("/api/tts/bt/promote-cache", response_model=ApiResponse)
+async def promote_bt_cache_audio(
+    payload: LibraryAudioPromoteRequest,
+    request: Request,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    try:
+        library_audio = container.bt_online_tts_service.promote_cache_audio_to_library(payload.filename)
+    except ValueError as error:
+        return ApiResponse.error(400, str(error))
+    except FileNotFoundError:
+        return ApiResponse.error(404, "cache audio file not found")
+
+    return ApiResponse.success({
+        "filename": library_audio.filename,
+        "displayName": library_audio.display_name,
+        "audioUrl": build_public_asset_url(request, library_audio.relative_url),
+    }, "bt cache audio promoted to library")
+
+
+@router.get("/api/tts/cp/config", response_model=ApiResponse)
+async def get_cp_online_tts_config(
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    return ApiResponse.success(container.cp_online_tts_service.build_runtime_payload())
+
+
+@router.get("/api/tts/cp/library", response_model=ApiResponse)
+async def get_cp_online_tts_library(
+    request: Request,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    library_assets = container.cp_online_tts_service.list_library_audio_assets()
+    data = [
+        {
+            "filename": asset.filename,
+            "displayName": asset.display_name,
+            "audioUrl": build_public_asset_url(request, asset.relative_url),
+        }
+        for asset in library_assets
+    ]
+    return ApiResponse.success(data)
+
+
+@router.post("/api/ws/harmony/notify-cp-online-tts", response_model=ApiResponse)
+async def notify_cp_online_tts(
+    payload: OnlineTtsRequest,
+    request: Request,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    message_text = payload.message.strip()
+    if message_text == "":
+        return ApiResponse.error(400, "message cannot be empty")
+
+    try:
+        generated_audio = await container.cp_online_tts_service.synthesize_to_cache(
+            message_text=message_text,
+            vcn=(payload.vcn or "").strip() or None,
+        )
+    except ValueError as error:
+        return ApiResponse.error(400, str(error))
+    except Exception as error:
+        return ApiResponse.error(500, str(error))
+
+    audio_url = build_public_asset_url(request, generated_audio.relative_url)
+    connected_clients = container.connection_manager.get_connected_count()
+    delivered_count = await container.connection_manager.send_app_audio_play(
+        audio_url=audio_url,
+        message_text=message_text,
+        audio_content_type=generated_audio.content_type,
+    )
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "message": message_text,
+        "filename": generated_audio.filename,
+        "audioUrl": audio_url,
+        "voiceName": generated_audio.voice_name,
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "cv online tts audio notification sent"
+        if delivered_count > 0
+        else "audio generated but no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/ws/harmony/play-cp-library-audio", response_model=ApiResponse)
+async def play_cp_library_audio(
+    payload: LibraryAudioPlayRequest,
+    request: Request,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    try:
+        library_audio = container.cp_online_tts_service.resolve_library_audio_asset(payload.filename)
+    except ValueError as error:
+        return ApiResponse.error(400, str(error))
+    except FileNotFoundError:
+        return ApiResponse.error(404, "audio file not found")
+
+    audio_url = build_public_asset_url(request, library_audio.relative_url)
+    connected_clients = container.connection_manager.get_connected_count()
+    delivered_count = await container.connection_manager.send_app_audio_play(
+        audio_url=audio_url,
+        message_text=library_audio.display_name,
+        audio_content_type=library_audio.content_type,
+    )
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "filename": library_audio.filename,
+        "displayName": library_audio.display_name,
+        "audioUrl": audio_url,
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "cv library audio notification sent"
+        if delivered_count > 0
+        else "audio selected but no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/tts/cp/promote-cache", response_model=ApiResponse)
+async def promote_cp_cache_audio(
+    payload: LibraryAudioPromoteRequest,
+    request: Request,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    try:
+        library_audio = container.cp_online_tts_service.promote_cache_audio_to_library(payload.filename)
+    except ValueError as error:
+        return ApiResponse.error(400, str(error))
+    except FileNotFoundError:
+        return ApiResponse.error(404, "cache audio file not found")
+
+    return ApiResponse.success({
+        "filename": library_audio.filename,
+        "displayName": library_audio.display_name,
+        "audioUrl": build_public_asset_url(request, library_audio.relative_url),
+    }, "cp cache audio promoted to library")
 
 
 @router.get("/api/ai/mode", response_model=ApiResponse)

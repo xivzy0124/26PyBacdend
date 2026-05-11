@@ -123,6 +123,10 @@ class LibraryAudioPlayRequest(BaseModel):
     filename: str
 
 
+class LibraryAudioPromoteRequest(BaseModel):
+    filename: str
+
+
 class XfyunTtsAccountUpsertRequest(BaseModel):
     accountId: str | None = None
     name: str

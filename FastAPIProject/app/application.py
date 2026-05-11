@@ -19,14 +19,22 @@ def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         os.makedirs(settings.data_dir, exist_ok=True)
-        os.makedirs(settings.audio_cache_dir, exist_ok=True)
-        os.makedirs(settings.audio_library_dir, exist_ok=True)
+        os.makedirs(settings.bt_cache_dir, exist_ok=True)
+        os.makedirs(settings.bt_library_dir, exist_ok=True)
+        os.makedirs(settings.cp_cache_dir, exist_ok=True)
+        os.makedirs(settings.cp_library_dir, exist_ok=True)
+        os.makedirs(settings.ai_cache_dir, exist_ok=True)
+        os.makedirs(settings.ai_library_dir, exist_ok=True)
         app.state.container = container
         yield
 
     application = FastAPI(title=settings.app_name, lifespan=lifespan)
-    application.mount("/audio-cache", StaticFiles(directory=settings.audio_cache_dir), name="audio-cache")
-    application.mount("/audio-library", StaticFiles(directory=settings.audio_library_dir), name="audio-library")
+    application.mount("/bt_cache", StaticFiles(directory=settings.bt_cache_dir), name="bt_cache")
+    application.mount("/bt_library", StaticFiles(directory=settings.bt_library_dir), name="bt_library")
+    application.mount("/cp_cache", StaticFiles(directory=settings.cp_cache_dir), name="cp_cache")
+    application.mount("/cp_library", StaticFiles(directory=settings.cp_library_dir), name="cp_library")
+    application.mount("/ai_cache", StaticFiles(directory=settings.ai_cache_dir), name="ai_cache")
+    application.mount("/ai_library", StaticFiles(directory=settings.ai_library_dir), name="ai_library")
     application.include_router(http_router)
     application.include_router(websocket_router)
     return application

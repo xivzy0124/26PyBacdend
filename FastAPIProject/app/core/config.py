@@ -16,18 +16,46 @@ class AppSettings:
         "HFOOD_DATA_DIR",
         os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
     )
-    audio_cache_dir: str = os.getenv(
-        "HFOOD_AUDIO_CACHE_DIR",
+    bt_cache_dir: str = os.getenv(
+        "HFOOD_BT_AUDIO_CACHE_DIR",
         os.path.join(
             os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
-            "audio_cache",
+            "bt_cache",
         ),
     )
-    audio_library_dir: str = os.getenv(
-        "HFOOD_AUDIO_LIBRARY_DIR",
+    bt_library_dir: str = os.getenv(
+        "HFOOD_BT_AUDIO_LIBRARY_DIR",
         os.path.join(
             os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
-            "audio_library",
+            "bt_library",
+        ),
+    )
+    cp_cache_dir: str = os.getenv(
+        "HFOOD_CP_AUDIO_CACHE_DIR",
+        os.path.join(
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
+            "cp_cache",
+        ),
+    )
+    cp_library_dir: str = os.getenv(
+        "HFOOD_CP_AUDIO_LIBRARY_DIR",
+        os.path.join(
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
+            "cp_library",
+        ),
+    )
+    ai_cache_dir: str = os.getenv(
+        "HFOOD_AI_AUDIO_CACHE_DIR",
+        os.path.join(
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
+            "ai_cache",
+        ),
+    )
+    ai_library_dir: str = os.getenv(
+        "HFOOD_AI_AUDIO_LIBRARY_DIR",
+        os.path.join(
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
+            "ai_library",
         ),
     )
     xfyun_account_store_path: str = os.getenv(

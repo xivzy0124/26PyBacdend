@@ -488,7 +488,7 @@ def render_ws_control_page() -> str:
         <div class="extensions-grid">
             <section class="domain-block">
                 <div class="domain-header">
-                    <div class="domain-kicker">DOMAIN 01</div>
+                <div class="domain-kicker">DOMAIN 01</div>
                     <h2 class="domain-title">嵌入式软件</h2>
                     <p class="domain-desc">聚焦蓝牙双脚连接、真实落点直出、足压模式与重心轨迹合成显示。</p>
                 </div>
@@ -530,22 +530,38 @@ def render_ws_control_page() -> str:
 
                     <article class="card panel">
                         <div>
-                            <h2 class="section-title">嵌入式语音</h2>
-                            <p class="section-desc">这里发送的是鸿蒙设备本地 TTS，可直接播报蓝牙连接与足压链路状态。</p>
+                            <h2 class="section-title">鸿蒙端 TTS</h2>
+                            <p class="section-desc">本地 TTS 独立板块，直接调用设备侧播报能力。</p>
                         </div>
                         <section class="bubble-box">
-                            <label class="input-label" for="tts-input">发送鸿蒙 TTS 内容</label>
-                            <input type="text" id="tts-input" class="bubble-input" placeholder="输入要让鸿蒙端本地 TTS 播报的内容">
-                            <div style="margin-top: 12px;">
-                                <label class="input-label">快捷蓝牙语音</label>
-                            </div>
-                            <div class="quick-command-grid">
-                                <button type="button" class="quick-command-btn" data-tts-message="蓝牙正在连接中，请稍后。">蓝牙连接中</button>
-                                <button type="button" class="quick-command-btn" data-tts-message="蓝牙连接成功，正在持续监测足底压力数据。">蓝牙连接成功</button>
-                            </div>
+                            <label class="input-label" for="local-tts-input">发送鸿蒙端 TTS 内容</label>
+                            <input type="text" id="local-tts-input" class="bubble-input" placeholder="输入要让鸿蒙设备本地 TTS 播报的内容">
                             <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
-                                <button type="button" class="primary" id="send-tts-btn" disabled>发送鸿蒙 TTS</button>
+                                <button type="button" class="primary" id="send-local-tts-btn" disabled>发送鸿蒙端 TTS</button>
                             </div>
+                        </section>
+                    </article>
+
+                    <article class="card panel">
+                        <div>
+                            <h2 class="section-title">蓝牙在线语音</h2>
+                            <p class="section-desc">蓝牙板块使用独立的在线语音接口与独立音频库目录，只保留蓝牙相关播报。</p>
+                        </div>
+                        <section class="bubble-box">
+                            <label class="input-label" for="embedded-tts-input">发送蓝牙语音内容</label>
+                            <input type="text" id="embedded-tts-input" class="bubble-input" placeholder="输入要让设备播报的蓝牙语音">
+                            <div style="margin-top: 12px;">
+                                <label class="input-label" for="embedded-library-select">蓝牙音频库</label>
+                                <select id="embedded-library-select" class="quick-select">
+                                    <option value="">选择一个蓝牙音频</option>
+                                </select>
+                            </div>
+                            <div class="quick-command-grid" id="embedded-library-list"></div>
+                            <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
+                                <button type="button" class="primary" id="send-embedded-tts-btn" disabled>发送蓝牙在线语音</button>
+                                <button type="button" id="add-embedded-library-btn" disabled>加入蓝牙语音库</button>
+                            </div>
+                            <div class="section-desc" id="embedded-cache-hint">发送后会先进入 cache，再可加入蓝牙语音库。</div>
                         </section>
                     </article>
                 </div>
@@ -577,25 +593,24 @@ def render_ws_control_page() -> str:
 
                     <article class="card panel">
                         <div>
-                            <h2 class="section-title">计算机视觉语音</h2>
+                            <h2 class="section-title">计算机视觉在线语音</h2>
                             <p class="section-desc">只保留体态、采集、分析与渲染相关语音，不混入蓝牙播报。</p>
                         </div>
                         <section class="bubble-box">
-                            <label class="input-label" for="online-tts-input">发送计算机视觉语音内容</label>
-                            <input type="text" id="online-tts-input" class="bubble-input" placeholder="输入要让设备播报的计算机视觉语音">
+                            <label class="input-label" for="cv-tts-input">发送计算机视觉语音内容</label>
+                            <input type="text" id="cv-tts-input" class="bubble-input" placeholder="输入要让设备播报的计算机视觉语音">
                             <div style="margin-top: 12px;">
-                                <label class="input-label" for="online-tts-shortcut-select">手工音频列表</label>
-                                <select id="online-tts-shortcut-select" class="quick-select">
-                                    <option value="">选择一个手工音频</option>
+                                <label class="input-label" for="cv-library-select">计算机视觉音频库</label>
+                                <select id="cv-library-select" class="quick-select">
+                                    <option value="">选择一个计算机视觉音频</option>
                                 </select>
                             </div>
-                            <div class="quick-command-grid" id="tts-shortcut-list"></div>
-                            <div class="quick-command-grid" id="online-tts-shortcut-list"></div>
+                            <div class="quick-command-grid" id="cv-library-list"></div>
                             <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
-                                <button type="button" class="primary" id="send-online-tts-btn" disabled>发送计算机视觉语音</button>
-                                <button type="button" id="add-tts-shortcut-btn" disabled>把当前输入加入视觉快捷语音</button>
-                                <button type="button" id="delete-tts-shortcut-btn" disabled>删除已选视觉快捷语音</button>
+                                <button type="button" class="primary" id="send-cv-tts-btn" disabled>发送计算机视觉在线语音</button>
+                                <button type="button" id="add-cv-library-btn" disabled>加入计算机视觉语音库</button>
                             </div>
+                            <div class="section-desc" id="cv-cache-hint">发送后会先进入 cache，再可加入计算机视觉语音库。</div>
                         </section>
                     </article>
                 </div>
@@ -629,22 +644,26 @@ def render_ws_control_page() -> str:
     const connectedCountEl = document.getElementById('connected-count');
     const socketPathEl = document.getElementById('socket-path');
     const socketPathSideEl = document.getElementById('socket-path-side');
-    const embeddedTtsQuickButtons = Array.from(document.querySelectorAll('[data-tts-message]'));
     const pressureModeLabelLargeEl = document.getElementById('pressure-mode-label-large');
     const pressureModeDescriptionLargeEl = document.getElementById('pressure-mode-description-large');
     const pressureModePillEl = document.getElementById('pressure-mode-pill');
     const pressureModeDescriptionEl = document.getElementById('pressure-mode-description');
     const traceModePillEl = document.getElementById('trace-mode-pill');
     const traceModeDescriptionEl = document.getElementById('trace-mode-description');
-    const ttsInputEl = document.getElementById('tts-input');
-    const sendTtsBtn = document.getElementById('send-tts-btn');
-    const onlineTtsInputEl = document.getElementById('online-tts-input');
-    const sendOnlineTtsBtn = document.getElementById('send-online-tts-btn');
-    const onlineTtsShortcutSelectEl = document.getElementById('online-tts-shortcut-select');
-    const onlineTtsShortcutListEl = document.getElementById('online-tts-shortcut-list');
-    const ttsShortcutListEl = document.getElementById('tts-shortcut-list');
-    const addTtsShortcutBtn = document.getElementById('add-tts-shortcut-btn');
-    const deleteTtsShortcutBtn = document.getElementById('delete-tts-shortcut-btn');
+    const localTtsInputEl = document.getElementById('local-tts-input');
+    const sendLocalTtsBtn = document.getElementById('send-local-tts-btn');
+    const embeddedTtsInputEl = document.getElementById('embedded-tts-input');
+    const sendEmbeddedTtsBtn = document.getElementById('send-embedded-tts-btn');
+    const addEmbeddedLibraryBtn = document.getElementById('add-embedded-library-btn');
+    const embeddedCacheHintEl = document.getElementById('embedded-cache-hint');
+    const embeddedLibrarySelectEl = document.getElementById('embedded-library-select');
+    const embeddedLibraryListEl = document.getElementById('embedded-library-list');
+    const cvTtsInputEl = document.getElementById('cv-tts-input');
+    const sendCvTtsBtn = document.getElementById('send-cv-tts-btn');
+    const addCvLibraryBtn = document.getElementById('add-cv-library-btn');
+    const cvCacheHintEl = document.getElementById('cv-cache-hint');
+    const cvLibrarySelectEl = document.getElementById('cv-library-select');
+    const cvLibraryListEl = document.getElementById('cv-library-list');
     const logBodyEl = document.getElementById('log-body');
     const testBtn = document.getElementById('test-btn');
     const refreshBtn = document.getElementById('refresh-btn');
@@ -671,41 +690,39 @@ def render_ws_control_page() -> str:
         minute: '2-digit',
         second: '2-digit'
     });
-    const TTS_SHORTCUT_STORAGE_KEY = 'hfood.tts.shortcuts';
-    const DEFAULT_TTS_SHORTCUTS = [
-        '全链路最终优化驱动已开启。',
-        '原始单目驱动正在开启，请稍后。',
-        '数据已经成功采集，正在实时传输到AI算法模块。',
-        '时序平滑优化已开启。',
-        '架构优化与空间约束代码已加载。',
-        '正在分析姿态。',
-        '正在渲染模型。',
-        '请保持全身入镜，缓慢转身、抬手。',
-        '请远离摄像头。',
-        '请靠近摄像头。',
-        '采集已完成。',
-        '高精度模型已完成渲染，正在同步姿态驱动结果。'
-    ];
-
-    let ttsShortcutMessages = loadTtsShortcuts();
-    let onlineTtsRuntimeConfig = {
+    let embeddedOnlineTtsRuntimeConfig = {
         activeAccountName: '',
         defaultVcn: 'xiaoyan'
     };
-    let onlineLibraryItems = [];
+    let cvOnlineTtsRuntimeConfig = {
+        activeAccountName: '',
+        defaultVcn: 'xiaoyan'
+    };
+    let embeddedLibraryItems = [];
+    let cvLibraryItems = [];
+    let lastEmbeddedCacheFilename = '';
+    let lastCvCacheFilename = '';
 
     function writeLog(message) {
         const now = SHANGHAI_TIME_FORMATTER.format(new Date());
         logBodyEl.textContent = `[${now}] ${message}\\n` + logBodyEl.textContent;
     }
 
-    function updateSendTtsButtonState() {
-        const currentMessage = ttsInputEl.value.trim();
-        sendTtsBtn.disabled = currentMessage.length <= 0;
+    function updateSendEmbeddedTtsButtonState() {
+        const currentMessage = embeddedTtsInputEl.value.trim();
+        sendEmbeddedTtsBtn.disabled = currentMessage.length <= 0;
+        addEmbeddedLibraryBtn.disabled = lastEmbeddedCacheFilename.length <= 0;
     }
 
-    function updateSendOnlineTtsButtonState() {
-        sendOnlineTtsBtn.disabled = onlineTtsInputEl.value.trim().length <= 0;
+    function updateSendCvTtsButtonState() {
+        const currentMessage = cvTtsInputEl.value.trim();
+        sendCvTtsBtn.disabled = currentMessage.length <= 0;
+        addCvLibraryBtn.disabled = lastCvCacheFilename.length <= 0;
+    }
+
+    function updateSendLocalTtsButtonState() {
+        const currentMessage = localTtsInputEl.value.trim();
+        sendLocalTtsBtn.disabled = currentMessage.length <= 0;
     }
 
     function renderDeviceStatus(connectedClients) {
@@ -758,107 +775,72 @@ def render_ws_control_page() -> str:
         });
     }
 
-    function renderOnlineTtsVoiceOptions(config) {
-        onlineTtsRuntimeConfig = {
+    function renderEmbeddedOnlineTtsVoiceOptions(config) {
+        embeddedOnlineTtsRuntimeConfig = {
             activeAccountName: (config && config.activeAccountName) || '',
             defaultVcn: (config && config.defaultVcn) || 'xiaoyan'
         };
     }
 
-    function loadTtsShortcuts() {
-        try {
-            const rawValue = window.localStorage.getItem(TTS_SHORTCUT_STORAGE_KEY);
-            const parsedValue = rawValue ? JSON.parse(rawValue) : null;
-            if (Array.isArray(parsedValue)) {
-                const storedMessages = parsedValue
-                    .map(item => String(item).trim())
-                    .filter(Boolean);
-                return Array.from(new Set(storedMessages));
-            }
-        } catch (error) {
-            window.localStorage.removeItem(TTS_SHORTCUT_STORAGE_KEY);
-        }
-        return [...DEFAULT_TTS_SHORTCUTS];
+    function renderCvOnlineTtsVoiceOptions(config) {
+        cvOnlineTtsRuntimeConfig = {
+            activeAccountName: (config && config.activeAccountName) || '',
+            defaultVcn: (config && config.defaultVcn) || 'xiaoyan'
+        };
     }
 
-    function saveTtsShortcuts() {
-        window.localStorage.setItem(TTS_SHORTCUT_STORAGE_KEY, JSON.stringify(ttsShortcutMessages));
-    }
-
-    function renderTtsShortcuts(selectedMessage = onlineTtsInputEl.value.trim()) {
-        ttsShortcutListEl.innerHTML = '';
-        ttsShortcutMessages.forEach((message) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'quick-command-btn';
-            button.textContent = message;
-            button.title = '点击后直接发送这条语音';
-            button.classList.toggle('active', message === selectedMessage);
-            button.addEventListener('click', () => {
-                onlineTtsInputEl.value = message;
-                updateSendOnlineTtsButtonState();
-                void sendOnlineTtsMessage();
-            });
-            ttsShortcutListEl.appendChild(button);
-        });
-        addTtsShortcutBtn.disabled = onlineTtsInputEl.value.trim().length <= 0 || ttsShortcutMessages.includes(onlineTtsInputEl.value.trim());
-        deleteTtsShortcutBtn.disabled = selectedMessage.length <= 0;
-    }
-
-    function renderOnlineAudioLibrary(selectedFilename = onlineTtsShortcutSelectEl.value) {
-        onlineTtsShortcutSelectEl.innerHTML = '<option value="">选择一个手工音频</option>';
-        onlineLibraryItems.forEach((item) => {
+    function renderEmbeddedAudioLibrary(selectedFilename = embeddedLibrarySelectEl.value) {
+        embeddedLibrarySelectEl.innerHTML = '<option value="">选择一个嵌入式音频</option>';
+        embeddedLibraryItems.forEach((item) => {
             const option = document.createElement('option');
             option.value = item.filename;
             option.textContent = item.displayName;
             option.selected = item.filename === selectedFilename;
-            onlineTtsShortcutSelectEl.appendChild(option);
+            embeddedLibrarySelectEl.appendChild(option);
         });
 
-        onlineTtsShortcutListEl.innerHTML = '';
-        onlineLibraryItems.forEach((item) => {
+        embeddedLibraryListEl.innerHTML = '';
+        embeddedLibraryItems.forEach((item) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'quick-command-btn';
             button.textContent = item.displayName;
-            button.title = '点击后直接播放这条手工音频';
+            button.title = '点击后直接播放这条嵌入式音频';
             button.classList.toggle('active', item.filename === selectedFilename);
             button.addEventListener('click', () => {
-                onlineTtsShortcutSelectEl.value = item.filename;
-                renderOnlineAudioLibrary(item.filename);
-                void playLibraryAudio(item.filename);
+                embeddedLibrarySelectEl.value = item.filename;
+                renderEmbeddedAudioLibrary(item.filename);
+                void playEmbeddedLibraryAudio(item.filename);
             });
-            onlineTtsShortcutListEl.appendChild(button);
+            embeddedLibraryListEl.appendChild(button);
+        });
+    }
+
+    function renderCvAudioLibrary(selectedFilename = cvLibrarySelectEl.value) {
+        cvLibrarySelectEl.innerHTML = '<option value="">选择一个计算机视觉音频</option>';
+        cvLibraryItems.forEach((item) => {
+            const option = document.createElement('option');
+            option.value = item.filename;
+            option.textContent = item.displayName;
+            option.selected = item.filename === selectedFilename;
+            cvLibrarySelectEl.appendChild(option);
         });
 
-        updateSendOnlineTtsButtonState();
-    }
-
-    function addCurrentTtsShortcut() {
-        const message = onlineTtsInputEl.value.trim();
-        if (message.length <= 0 || ttsShortcutMessages.includes(message)) {
-            renderTtsShortcuts(message);
-            return;
-        }
-
-        ttsShortcutMessages = [...ttsShortcutMessages, message];
-        saveTtsShortcuts();
-        renderTtsShortcuts(message);
-        writeLog(`已加入快捷语音：${message}`);
-    }
-
-    function deleteSelectedTtsShortcut() {
-        const message = onlineTtsInputEl.value.trim();
-        if (!message) {
-            renderTtsShortcuts('');
-            return;
-        }
-
-        ttsShortcutMessages = ttsShortcutMessages.filter(item => item !== message);
-        saveTtsShortcuts();
-        onlineTtsInputEl.value = '';
-        renderTtsShortcuts('');
-        writeLog(`已删除快捷语音：${message}`);
+        cvLibraryListEl.innerHTML = '';
+        cvLibraryItems.forEach((item) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'quick-command-btn';
+            button.textContent = item.displayName;
+            button.title = '点击后直接播放这条计算机视觉音频';
+            button.classList.toggle('active', item.filename === selectedFilename);
+            button.addEventListener('click', () => {
+                cvLibrarySelectEl.value = item.filename;
+                renderCvAudioLibrary(item.filename);
+                void playCvLibraryAudio(item.filename);
+            });
+            cvLibraryListEl.appendChild(button);
+        });
     }
 
     async function refreshDeviceStatus(silent = true) {
@@ -931,44 +913,85 @@ def render_ws_control_page() -> str:
         }
     }
 
-    async function refreshOnlineTtsConfig(silent = true) {
+    async function refreshEmbeddedOnlineTtsConfig(silent = true) {
         try {
-            const response = await fetch('/api/tts/online/config', {
+            const response = await fetch('/api/tts/bt/config', {
                 method: 'GET',
                 cache: 'no-store'
             });
             const result = await response.json();
             const data = result.data || {};
-            renderOnlineTtsVoiceOptions(data);
+            renderEmbeddedOnlineTtsVoiceOptions(data);
             if (!silent && data.activeAccountName) {
-                writeLog(`在线语音配置已刷新，当前账号：${data.activeAccountName}，默认音色：${data.defaultVcn || 'xiaoyan'}。`);
+                writeLog(`蓝牙在线语音配置已刷新，当前账号：${data.activeAccountName}，默认音色：${data.defaultVcn || 'xiaoyan'}。`);
             }
         } catch (error) {
-            writeLog(`在线语音配置刷新失败：${error}`);
+            writeLog(`蓝牙在线语音配置刷新失败：${error}`);
         }
     }
 
-    async function refreshOnlineAudioLibrary(silent = true) {
+    async function refreshEmbeddedAudioLibrary(silent = true) {
         try {
-            const response = await fetch('/api/tts/online/library', {
+            const response = await fetch('/api/tts/bt/library', {
                 method: 'GET',
                 cache: 'no-store'
             });
             const result = await response.json();
             const data = Array.isArray(result.data) ? result.data : [];
-            onlineLibraryItems = data
+            embeddedLibraryItems = data
                 .map((item) => ({
                     filename: String(item.filename || '').trim(),
                     displayName: String(item.displayName || item.filename || '').trim(),
                     audioUrl: String(item.audioUrl || '').trim()
                 }))
                 .filter((item) => item.filename.length > 0 && item.displayName.length > 0);
-            renderOnlineAudioLibrary();
+            renderEmbeddedAudioLibrary();
             if (!silent) {
-                writeLog(`手工音频列表已刷新，当前共 ${onlineLibraryItems.length} 条。`);
+                writeLog(`蓝牙音频库已刷新，当前共 ${embeddedLibraryItems.length} 条。`);
             }
         } catch (error) {
-            writeLog(`手工音频列表刷新失败：${error}`);
+            writeLog(`蓝牙音频库刷新失败：${error}`);
+        }
+    }
+
+    async function refreshCvOnlineTtsConfig(silent = true) {
+        try {
+            const response = await fetch('/api/tts/cp/config', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            const data = result.data || {};
+            renderCvOnlineTtsVoiceOptions(data);
+            if (!silent && data.activeAccountName) {
+                writeLog(`计算机视觉在线语音配置已刷新，当前账号：${data.activeAccountName}，默认音色：${data.defaultVcn || 'xiaoyan'}。`);
+            }
+        } catch (error) {
+            writeLog(`计算机视觉在线语音配置刷新失败：${error}`);
+        }
+    }
+
+    async function refreshCvAudioLibrary(silent = true) {
+        try {
+            const response = await fetch('/api/tts/cp/library', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            const data = Array.isArray(result.data) ? result.data : [];
+            cvLibraryItems = data
+                .map((item) => ({
+                    filename: String(item.filename || '').trim(),
+                    displayName: String(item.displayName || item.filename || '').trim(),
+                    audioUrl: String(item.audioUrl || '').trim()
+                }))
+                .filter((item) => item.filename.length > 0 && item.displayName.length > 0);
+            renderCvAudioLibrary();
+            if (!silent) {
+                writeLog(`计算机视觉音频库已刷新，当前共 ${cvLibraryItems.length} 条。`);
+            }
+        } catch (error) {
+            writeLog(`计算机视觉音频库刷新失败：${error}`);
         }
     }
 
@@ -1059,14 +1082,14 @@ def render_ws_control_page() -> str:
         }
     }
 
-    async function sendTtsMessage() {
-        const message = ttsInputEl.value.trim();
+    async function sendLocalTtsMessage() {
+        const message = localTtsInputEl.value.trim();
         if (message.length <= 0) {
-            updateSendTtsButtonState();
+            updateSendLocalTtsButtonState();
             return;
         }
 
-        sendTtsBtn.disabled = true;
+        sendLocalTtsBtn.disabled = true;
         writeLog(`正在发送鸿蒙端 TTS：${message}`);
 
         try {
@@ -1086,27 +1109,27 @@ def render_ws_control_page() -> str:
             const data = result.data || {};
             renderDeviceStatus(Number(data.connectedClients || 0));
             writeLog(`鸿蒙端 TTS 发送完成，内容“${data.message || message}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
-            ttsInputEl.value = '';
-            updateSendTtsButtonState();
+            localTtsInputEl.value = '';
+            updateSendLocalTtsButtonState();
         } catch (error) {
             writeLog(`发送鸿蒙端 TTS 失败：${error}`);
         } finally {
-            updateSendTtsButtonState();
+            updateSendLocalTtsButtonState();
         }
     }
 
-    async function sendOnlineTtsMessage() {
-        const message = onlineTtsInputEl.value.trim();
+    async function sendEmbeddedOnlineTtsMessage() {
+        const message = embeddedTtsInputEl.value.trim();
         if (message.length <= 0) {
-            updateSendOnlineTtsButtonState();
+            updateSendEmbeddedTtsButtonState();
             return;
         }
 
-        sendOnlineTtsBtn.disabled = true;
-        writeLog(`正在发送在线语音播报：${message}`);
+        sendEmbeddedTtsBtn.disabled = true;
+        writeLog(`正在发送蓝牙在线语音：${message}`);
 
         try {
-            const response = await fetch('/api/ws/harmony/notify-online-tts', {
+            const response = await fetch('/api/ws/harmony/notify-bt-online-tts', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1115,20 +1138,123 @@ def render_ws_control_page() -> str:
             });
             const result = await response.json();
             if (Number(result.code) !== 200) {
-                writeLog(`发送在线语音失败：${result.message || '未知错误'}`);
+                writeLog(`发送蓝牙在线语音失败：${result.message || '未知错误'}`);
                 return;
             }
 
             const data = result.data || {};
             renderDeviceStatus(Number(data.connectedClients || 0));
-            writeLog(`在线语音发送完成，内容“${data.message || message}”，文件 ${data.filename || '未返回'}，音色 ${data.voiceName || 'xiaoyan'}，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
-            onlineTtsInputEl.value = '';
-            updateSendOnlineTtsButtonState();
-            void refreshOnlineAudioLibrary(true);
+            lastEmbeddedCacheFilename = String(data.filename || '').trim();
+            embeddedCacheHintEl.textContent = lastEmbeddedCacheFilename
+                ? `最近生成的蓝牙缓存文件：${lastEmbeddedCacheFilename}`
+                : '发送后会先进入 cache，再可加入蓝牙语音库。';
+            writeLog(`蓝牙在线语音发送完成，内容“${data.message || message}”，文件 ${data.filename || '未返回'}，音色 ${data.voiceName || embeddedOnlineTtsRuntimeConfig.defaultVcn || 'xiaoyan'}，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+            embeddedTtsInputEl.value = '';
+            updateSendEmbeddedTtsButtonState();
+            void refreshEmbeddedAudioLibrary(true);
         } catch (error) {
-            writeLog(`发送在线语音失败：${error}`);
+            writeLog(`发送蓝牙在线语音失败：${error}`);
         } finally {
-            updateSendOnlineTtsButtonState();
+            updateSendEmbeddedTtsButtonState();
+        }
+    }
+
+    async function sendCvOnlineTtsMessage() {
+        const message = cvTtsInputEl.value.trim();
+        if (message.length <= 0) {
+            updateSendCvTtsButtonState();
+            return;
+        }
+
+        sendCvTtsBtn.disabled = true;
+        writeLog(`正在发送计算机视觉在线语音：${message}`);
+
+        try {
+            const response = await fetch('/api/ws/harmony/notify-cp-online-tts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`发送计算机视觉在线语音失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            lastCvCacheFilename = String(data.filename || '').trim();
+            cvCacheHintEl.textContent = lastCvCacheFilename
+                ? `最近生成的计算机视觉缓存文件：${lastCvCacheFilename}`
+                : '发送后会先进入 cache，再可加入计算机视觉语音库。';
+            writeLog(`计算机视觉在线语音发送完成，内容“${data.message || message}”，文件 ${data.filename || '未返回'}，音色 ${data.voiceName || cvOnlineTtsRuntimeConfig.defaultVcn || 'xiaoyan'}，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+            cvTtsInputEl.value = '';
+            updateSendCvTtsButtonState();
+            void refreshCvAudioLibrary(true);
+        } catch (error) {
+            writeLog(`发送计算机视觉在线语音失败：${error}`);
+        } finally {
+            updateSendCvTtsButtonState();
+        }
+    }
+
+    async function addEmbeddedCacheToLibrary() {
+        if (!lastEmbeddedCacheFilename) {
+            return;
+        }
+        addEmbeddedLibraryBtn.disabled = true;
+        writeLog(`正在将蓝牙缓存音频加入语音库：${lastEmbeddedCacheFilename}`);
+        try {
+            const response = await fetch('/api/tts/bt/promote-cache', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: lastEmbeddedCacheFilename })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`加入蓝牙语音库失败：${result.message || '未知错误'}`);
+                return;
+            }
+            embeddedCacheHintEl.textContent = `已加入蓝牙语音库：${lastEmbeddedCacheFilename}`;
+            writeLog(`蓝牙缓存音频已加入语音库：${lastEmbeddedCacheFilename}`);
+            void refreshEmbeddedAudioLibrary(true);
+        } catch (error) {
+            writeLog(`加入蓝牙语音库失败：${error}`);
+        } finally {
+            updateSendEmbeddedTtsButtonState();
+        }
+    }
+
+    async function addCvCacheToLibrary() {
+        if (!lastCvCacheFilename) {
+            return;
+        }
+        addCvLibraryBtn.disabled = true;
+        writeLog(`正在将计算机视觉缓存音频加入语音库：${lastCvCacheFilename}`);
+        try {
+            const response = await fetch('/api/tts/cp/promote-cache', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: lastCvCacheFilename })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`加入计算机视觉语音库失败：${result.message || '未知错误'}`);
+                return;
+            }
+            cvCacheHintEl.textContent = `已加入计算机视觉语音库：${lastCvCacheFilename}`;
+            writeLog(`计算机视觉缓存音频已加入语音库：${lastCvCacheFilename}`);
+            void refreshCvAudioLibrary(true);
+        } catch (error) {
+            writeLog(`加入计算机视觉语音库失败：${error}`);
+        } finally {
+            updateSendCvTtsButtonState();
         }
     }
 
@@ -1197,15 +1323,15 @@ def render_ws_control_page() -> str:
         });
     }
 
-    async function playLibraryAudio(filename) {
+    async function playEmbeddedLibraryAudio(filename) {
         const normalizedFilename = String(filename || '').trim();
         if (normalizedFilename.length <= 0) {
             return;
         }
 
-        writeLog(`正在播放手工音频：${normalizedFilename}`);
+        writeLog(`正在播放蓝牙音频：${normalizedFilename}`);
         try {
-            const response = await fetch('/api/ws/harmony/play-library-audio', {
+            const response = await fetch('/api/ws/harmony/play-bt-library-audio', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1214,15 +1340,44 @@ def render_ws_control_page() -> str:
             });
             const result = await response.json();
             if (Number(result.code) !== 200) {
-                writeLog(`播放手工音频失败：${result.message || '未知错误'}`);
+                writeLog(`播放蓝牙音频失败：${result.message || '未知错误'}`);
                 return;
             }
 
             const data = result.data || {};
             renderDeviceStatus(Number(data.connectedClients || 0));
-            writeLog(`手工音频播放完成，文件“${data.filename || normalizedFilename}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+            writeLog(`蓝牙音频播放完成，文件“${data.filename || normalizedFilename}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
         } catch (error) {
-            writeLog(`播放手工音频失败：${error}`);
+            writeLog(`播放蓝牙音频失败：${error}`);
+        }
+    }
+
+    async function playCvLibraryAudio(filename) {
+        const normalizedFilename = String(filename || '').trim();
+        if (normalizedFilename.length <= 0) {
+            return;
+        }
+
+        writeLog(`正在播放计算机视觉音频：${normalizedFilename}`);
+        try {
+            const response = await fetch('/api/ws/harmony/play-cp-library-audio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: normalizedFilename })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`播放计算机视觉音频失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            writeLog(`计算机视觉音频播放完成，文件“${data.filename || normalizedFilename}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+        } catch (error) {
+            writeLog(`播放计算机视觉音频失败：${error}`);
         }
     }
 
@@ -1231,54 +1386,57 @@ def render_ws_control_page() -> str:
         await refreshAiMode(false);
         await refreshPressureDemoMode(false);
         await refreshPressureTraceDemoMode(false);
-        await refreshOnlineTtsConfig(false);
-        await refreshOnlineAudioLibrary(false);
+        await refreshEmbeddedOnlineTtsConfig(false);
+        await refreshEmbeddedAudioLibrary(false);
+        await refreshCvOnlineTtsConfig(false);
+        await refreshCvAudioLibrary(false);
     });
 
     testBtn.addEventListener('click', testConnection);
-    sendTtsBtn.addEventListener('click', sendTtsMessage);
-    sendOnlineTtsBtn.addEventListener('click', sendOnlineTtsMessage);
+    sendLocalTtsBtn.addEventListener('click', sendLocalTtsMessage);
+    sendEmbeddedTtsBtn.addEventListener('click', sendEmbeddedOnlineTtsMessage);
+    sendCvTtsBtn.addEventListener('click', sendCvOnlineTtsMessage);
 
-    ttsInputEl.addEventListener('input', updateSendTtsButtonState);
-    ttsInputEl.addEventListener('keydown', (event) => {
+    localTtsInputEl.addEventListener('input', updateSendLocalTtsButtonState);
+    localTtsInputEl.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            void sendTtsMessage();
+            void sendLocalTtsMessage();
         }
     });
-    embeddedTtsQuickButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-            const message = String(button.getAttribute('data-tts-message') || '').trim();
-            if (!message) {
-                return;
-            }
-            ttsInputEl.value = message;
-            updateSendTtsButtonState();
-            void sendTtsMessage();
-        });
-    });
-
-    onlineTtsInputEl.addEventListener('input', () => {
-        updateSendOnlineTtsButtonState();
-        renderTtsShortcuts(onlineTtsInputEl.value.trim());
-    });
-    onlineTtsInputEl.addEventListener('keydown', (event) => {
+    embeddedTtsInputEl.addEventListener('input', updateSendEmbeddedTtsButtonState);
+    embeddedTtsInputEl.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            void sendOnlineTtsMessage();
+            void sendEmbeddedOnlineTtsMessage();
         }
     });
-
-    onlineTtsShortcutSelectEl.addEventListener('change', () => {
-        const filename = onlineTtsShortcutSelectEl.value;
-        renderOnlineAudioLibrary(filename);
+    embeddedLibrarySelectEl.addEventListener('change', () => {
+        const filename = embeddedLibrarySelectEl.value;
+        renderEmbeddedAudioLibrary(filename);
         if (filename) {
-            void playLibraryAudio(filename);
+            void playEmbeddedLibraryAudio(filename);
         }
     });
+    addEmbeddedLibraryBtn.addEventListener('click', addEmbeddedCacheToLibrary);
 
-    addTtsShortcutBtn.addEventListener('click', addCurrentTtsShortcut);
-    deleteTtsShortcutBtn.addEventListener('click', deleteSelectedTtsShortcut);
+    cvTtsInputEl.addEventListener('input', () => {
+        updateSendCvTtsButtonState();
+    });
+    cvTtsInputEl.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            void sendCvOnlineTtsMessage();
+        }
+    });
+    cvLibrarySelectEl.addEventListener('change', () => {
+        const filename = cvLibrarySelectEl.value;
+        renderCvAudioLibrary(filename);
+        if (filename) {
+            void playCvLibraryAudio(filename);
+        }
+    });
+    addCvLibraryBtn.addEventListener('click', addCvCacheToLibrary);
     postureReadyBtn.textContent = '默认';
     postureRenderBtn.textContent = '渲染';
     postureStep2Btn.textContent = '阶段2';
@@ -1314,24 +1472,30 @@ def render_ws_control_page() -> str:
     traceModeButtons.normal.addEventListener('click', () => switchPressureTraceDemoMode('normal'));
     traceModeButtons.jitter.addEventListener('click', () => switchPressureTraceDemoMode('jitter'));
 
-    renderTtsShortcuts();
-    renderOnlineAudioLibrary();
-    updateSendTtsButtonState();
-    updateSendOnlineTtsButtonState();
+    renderEmbeddedAudioLibrary();
+    renderCvAudioLibrary();
+    updateSendLocalTtsButtonState();
+    updateSendEmbeddedTtsButtonState();
+    updateSendCvTtsButtonState();
     refreshDeviceStatus(false);
     refreshAiMode(false);
     refreshPressureDemoMode(false);
     refreshPressureTraceDemoMode(false);
-    refreshOnlineTtsConfig(false);
-    refreshOnlineAudioLibrary(false);
+    refreshEmbeddedOnlineTtsConfig(false);
+    refreshEmbeddedAudioLibrary(false);
+    refreshCvOnlineTtsConfig(false);
+    refreshCvAudioLibrary(false);
 
     window.setInterval(() => {
         refreshDeviceStatus(true);
         refreshAiMode(true);
         refreshPressureDemoMode(true);
         refreshPressureTraceDemoMode(true);
-        refreshOnlineTtsConfig(true);
-        refreshOnlineAudioLibrary(true);
+        updateSendLocalTtsButtonState();
+        refreshEmbeddedOnlineTtsConfig(true);
+        refreshEmbeddedAudioLibrary(true);
+        refreshCvOnlineTtsConfig(true);
+        refreshCvAudioLibrary(true);
     }, 5000);
 </script>
 </body>
