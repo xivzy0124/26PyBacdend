@@ -102,6 +102,31 @@ class HarmonyConnectionManager:
         )
         return await self.broadcast(message)
 
+    async def send_demo_posture_command(
+        self,
+        mode: str,
+        title: str,
+        message_text: str,
+        phase: str,
+        body_detected: bool,
+        tracking_ready: bool,
+        camera_active: bool,
+        auto_navigate: bool,
+    ) -> int:
+        message = HarmonyAppWebSocketMessage(
+            type="demo_posture_control",
+            message=message_text,
+            timestamp=now_timestamp_ms(),
+            demoPostureMode=mode,
+            demoPostureTitle=title,
+            demoPosturePhase=phase,
+            demoPostureBodyDetected=body_detected,
+            demoPostureTrackingReady=tracking_ready,
+            demoPostureCameraActive=camera_active,
+            demoPostureAutoNavigate=auto_navigate,
+        )
+        return await self.broadcast(message)
+
     async def send_pressure_demo_mode_changed(
         self,
         mode: str,

@@ -33,7 +33,7 @@ def render_ws_control_page() -> str:
         body {
             margin: 0;
             min-height: 100vh;
-            padding: 28px;
+            padding: 16px;
             font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
             color: var(--text);
             background:
@@ -43,38 +43,78 @@ def render_ws_control_page() -> str:
         }
 
         .shell {
-            max-width: 1400px;
+            max-width: 1380px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 16px;
         }
 
         .main-layout {
             display: grid;
-            grid-template-columns: 380px 1fr;
-            gap: 24px;
+            grid-template-columns: 320px 1fr;
+            gap: 16px;
             align-items: start;
         }
 
         .extensions-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .domain-block {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .domain-header {
+            padding: 14px 18px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+            border: 1px solid #dce7f4;
+            box-shadow: var(--shadow);
+        }
+
+        .domain-kicker {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--primary);
+        }
+
+        .domain-title {
+            margin: 6px 0 0;
+            font-size: 21px;
+            line-height: 1.2;
+        }
+
+        .domain-desc {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .domain-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
         }
 
         .card {
             background: var(--card);
             border: 1px solid var(--line);
-            border-radius: 24px;
+            border-radius: 18px;
             box-shadow: var(--shadow);
         }
 
         .hero {
-            padding: 30px;
+            padding: 18px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 12px;
         }
 
         .eyebrow {
@@ -101,27 +141,27 @@ def render_ws_control_page() -> str:
 
         h1 {
             margin: 0;
-            font-size: 36px;
+            font-size: 30px;
             line-height: 1.1;
         }
 
         .subtitle {
             margin: 0;
             color: var(--muted);
-            line-height: 1.8;
-            font-size: 15px;
-            max-width: 800px;
+            line-height: 1.7;
+            font-size: 14px;
+            max-width: 780px;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
         }
 
         .mini-card {
-            padding: 18px;
-            border-radius: 18px;
+            padding: 14px;
+            border-radius: 14px;
             background: #f8fbff;
             border: 1px solid #e6edf8;
         }
@@ -132,8 +172,8 @@ def render_ws_control_page() -> str:
         }
 
         .mini-value {
-            margin-top: 10px;
-            font-size: 28px;
+            margin-top: 8px;
+            font-size: 24px;
             font-weight: 800;
             line-height: 1.1;
         }
@@ -146,37 +186,27 @@ def render_ws_control_page() -> str:
         }
 
         .panel {
-            padding: 26px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 10px;
         }
 
         .compact-panel {
-            padding: 18px;
-            gap: 12px;
-        }
-
-        .demo-card {
-            display: inline-flex;
-            width: auto;
-            max-width: 100%;
-            min-width: 0;
-            justify-self: start;
-            align-self: start;
-            grid-column: 1 / -1;
+            padding: 14px;
+            gap: 8px;
         }
 
         .section-title {
             margin: 0;
-            font-size: 20px;
+            font-size: 17px;
         }
 
         .section-desc {
-            margin: 8px 0 0;
+            margin: 6px 0 0;
             color: var(--muted);
-            font-size: 14px;
-            line-height: 1.8;
+            font-size: 13px;
+            line-height: 1.7;
         }
 
         .status-box,
@@ -185,14 +215,14 @@ def render_ws_control_page() -> str:
         .action-box,
         .log-box {
             border: 1px solid #e7edf6;
-            border-radius: 18px;
-            padding: 18px;
+            border-radius: 14px;
+            padding: 12px;
             background: #fbfdff;
         }
 
         .compact-box {
-            padding: 12px;
-            border-radius: 14px;
+            padding: 8px;
+            border-radius: 10px;
         }
 
         .status-pill,
@@ -263,22 +293,22 @@ def render_ws_control_page() -> str:
         .row {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
         }
 
         .action-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px;
-            margin-top: 14px;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         .input-label {
             display: block;
             font-size: 13px;
             color: var(--muted);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .bubble-input,
@@ -286,9 +316,9 @@ def render_ws_control_page() -> str:
             width: 100%;
             border: 1px solid #d5deeb;
             background: #fff;
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
             color: var(--text);
             outline: none;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -303,17 +333,17 @@ def render_ws_control_page() -> str:
         .quick-command-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 12px;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         .quick-command-btn,
         button {
             border: none;
             cursor: pointer;
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
             transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
         }
 
@@ -360,15 +390,15 @@ def render_ws_control_page() -> str:
 
         .mode-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
-            margin-top: 14px;
+            margin-top: 8px;
         }
 
         .log-body {
             margin: 0;
-            min-height: 320px;
-            max-height: 520px;
+            min-height: 220px;
+            max-height: 360px;
             overflow: auto;
             white-space: pre-wrap;
             word-break: break-word;
@@ -408,8 +438,8 @@ def render_ws_control_page() -> str:
         <div>
             <h1>Harmony 控制面板</h1>
             <p class="subtitle">
-                这个页面负责检查鸿蒙应用 WebSocket 是否在线、切换 AI 运行模式、发送语音，
-                以及通过讯飞在线语音生成并播放 mp3，或直接播放你手工放入音频库的现成文件。
+                这个页面负责检查鸿蒙应用 WebSocket 是否在线、切换运行模式、发送语音，
+                并把控制项按嵌入式软件、计算机视觉、AI 智能体三大区域进行集中展示。
             </p>
         </div>
         <div class="grid">
@@ -417,11 +447,6 @@ def render_ws_control_page() -> str:
                 <div class="mini-label">设备连接状态</div>
                 <div class="mini-value" id="device-status-text">离线</div>
                 <div class="mini-hint">已连接设备数会实时刷新。</div>
-            </div>
-            <div class="mini-card">
-                <div class="mini-label">当前 AI 模式</div>
-                <div class="mini-value" id="mode-label-large">模式 1</div>
-                <div class="mini-hint" id="mode-description-large">等待后端返回模式说明。</div>
             </div>
             <div class="mini-card">
                 <div class="mini-label">当前足压模式</div>
@@ -447,42 +472,6 @@ def render_ws_control_page() -> str:
                     <div><strong>WebSocket 路径：</strong><span id="socket-path-side">/ws/harmony-app</span></div>
                 </div>
             </section>
-
-            <section class="mode-box">
-                <div class="row">
-                    <span class="mode-pill mode1" id="mode-pill">模式 1</span>
-                </div>
-                <p class="section-desc" id="mode-description">等待后端返回模式说明。</p>
-                <div class="mode-actions">
-                    <button type="button" id="mode-mode1" class="active-mode">模式 1</button>
-                    <button type="button" id="mode-mode2">模式 2</button>
-                    <button type="button" id="mode-mode3">模式 3</button>
-                </div>
-            </section>
-
-            <section class="mode-box">
-                <div class="row">
-                    <span class="mode-pill direct" id="pressure-mode-pill">模式 2</span>
-                </div>
-                <p class="section-desc" id="pressure-mode-description">等待后端返回足压模式说明。</p>
-                <div class="mode-actions">
-                    <button type="button" id="pressure-mode-empty">模式 1 空白</button>
-                    <button type="button" id="pressure-mode-direct" class="active-mode">模式 2 直出</button>
-                    <button type="button" id="pressure-mode-repair">模式 3 修复</button>
-                </div>
-            </section>
-
-            <section class="mode-box">
-                <div class="row">
-                    <span class="mode-pill normal" id="trace-mode-pill">轨迹正常</span>
-                </div>
-                <p class="section-desc" id="trace-mode-description">等待后端返回轨迹演示说明。</p>
-                <div class="mode-actions">
-                    <button type="button" id="trace-mode-normal" class="active-mode">轨迹正常</button>
-                    <button type="button" id="trace-mode-jitter">轨迹波动</button>
-                </div>
-            </section>
-
             <section class="action-box">
                 <div class="action-grid">
                     <button type="button" id="test-btn">连接测试</button>
@@ -497,66 +486,139 @@ def render_ws_control_page() -> str:
         </aside>
 
         <div class="extensions-grid">
-            <article class="card panel compact-panel demo-card">
-                <div>
-                    <h2 class="section-title">体态演示卡片</h2>
-                    <p class="section-desc">体态实时演示控制。</p>
+            <section class="domain-block">
+                <div class="domain-header">
+                    <div class="domain-kicker">DOMAIN 01</div>
+                    <h2 class="domain-title">嵌入式软件</h2>
+                    <p class="domain-desc">聚焦蓝牙双脚连接、真实落点直出、足压模式与重心轨迹合成显示。</p>
                 </div>
-                <section class="bubble-box compact-box">
-                    <div class="quick-command-grid">
-                        <button type="button" id="posture-ready-btn">默认</button>
-                        <button type="button" id="posture-render-btn">渲染</button>
-                        <button type="button" id="posture-step2-btn">阶段2</button>
-                        <button type="button" id="posture-step3-btn">阶段3</button>
-                        <button type="button" id="posture-step4-btn">阶段4</button>
-                        <button type="button" id="posture-reload-btn">重载</button>
-                    </div>
-                </section>
-            </article>
+                <div class="domain-grid">
+                    <article class="card panel">
+                        <div>
+                            <h2 class="section-title">足压模式</h2>
+                            <p class="section-desc">模式 2 为真实落点直出；蓝牙双脚连接后按当前实时效果直接点亮。</p>
+                        </div>
+                        <section class="mode-box">
+                            <div class="row">
+                                <span class="mode-pill direct" id="pressure-mode-pill">模式 2 直出</span>
+                            </div>
+                            <p class="section-desc" id="pressure-mode-description">蓝牙双脚连接后按真实落点直接点亮，对应当前实时直出效果。</p>
+                            <div class="mode-actions">
+                                <button type="button" id="pressure-mode-empty">模式 1 空白</button>
+                                <button type="button" id="pressure-mode-direct" class="active-mode">模式 2 直出</button>
+                                <button type="button" id="pressure-mode-repair">模式 3 修复</button>
+                            </div>
+                        </section>
+                    </article>
 
-            <article class="card panel">
-                <div>
-                    <h2 class="section-title">鸿蒙端 TTS 语音</h2>
-                    <p class="section-desc">这里发送的是鸿蒙设备本地 TTS，会直接调用设备侧语音播报能力。</p>
-                </div>
-                <section class="bubble-box">
-                    <label class="input-label" for="tts-input">发送鸿蒙 TTS 内容</label>
-                    <input type="text" id="tts-input" class="bubble-input" placeholder="输入要让鸿蒙端本地 TTS 播报的内容">
-                    <div style="margin-top: 12px;">
-                        <label class="input-label" for="tts-shortcut-select">快捷语音选择</label>
-                        <select id="tts-shortcut-select" class="quick-select">
-                            <option value="">选择一条快捷语音</option>
-                        </select>
-                    </div>
-                    <div class="quick-command-grid" id="tts-shortcut-list"></div>
-                    <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
-                        <button type="button" class="primary" id="send-tts-btn" disabled>发送鸿蒙 TTS</button>
-                        <button type="button" id="add-tts-shortcut-btn" disabled>把当前输入加入快捷语音</button>
-                        <button type="button" id="delete-tts-shortcut-btn" disabled>删除已选快捷语音</button>
-                    </div>
-                </section>
-            </article>
+                    <article class="card panel">
+                        <div>
+                            <h2 class="section-title">重心轨迹</h2>
+                            <p class="section-desc">轨迹正常时按左右脚最新实时数据正常合成显示，不影响其他足压卡片。</p>
+                        </div>
+                        <section class="mode-box">
+                            <div class="row">
+                                <span class="mode-pill normal" id="trace-mode-pill">轨迹正常</span>
+                            </div>
+                            <p class="section-desc" id="trace-mode-description">重心轨迹按左右脚最新实时数据正常合成显示，不影响其他足压卡片。</p>
+                            <div class="mode-actions">
+                                <button type="button" id="trace-mode-normal" class="active-mode">轨迹正常</button>
+                                <button type="button" id="trace-mode-jitter">轨迹波动</button>
+                            </div>
+                        </section>
+                    </article>
 
-            <article class="card panel">
-                <div>
-                    <h2 class="section-title">讯飞在线语音</h2>
-                    <p class="section-desc">文本输入会调用讯飞在线语音生成 mp3；下面的手工音频列表只读取你放入音频库的现成文件。</p>
+                    <article class="card panel">
+                        <div>
+                            <h2 class="section-title">嵌入式语音</h2>
+                            <p class="section-desc">这里发送的是鸿蒙设备本地 TTS，可直接播报蓝牙连接与足压链路状态。</p>
+                        </div>
+                        <section class="bubble-box">
+                            <label class="input-label" for="tts-input">发送鸿蒙 TTS 内容</label>
+                            <input type="text" id="tts-input" class="bubble-input" placeholder="输入要让鸿蒙端本地 TTS 播报的内容">
+                            <div style="margin-top: 12px;">
+                                <label class="input-label">快捷蓝牙语音</label>
+                            </div>
+                            <div class="quick-command-grid">
+                                <button type="button" class="quick-command-btn" data-tts-message="蓝牙正在连接中，请稍后。">蓝牙连接中</button>
+                                <button type="button" class="quick-command-btn" data-tts-message="蓝牙连接成功，正在持续监测足底压力数据。">蓝牙连接成功</button>
+                            </div>
+                            <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
+                                <button type="button" class="primary" id="send-tts-btn" disabled>发送鸿蒙 TTS</button>
+                            </div>
+                        </section>
+                    </article>
                 </div>
-                <section class="bubble-box">
-                    <label class="input-label" for="online-tts-input">发送讯飞在线语音内容</label>
-                    <input type="text" id="online-tts-input" class="bubble-input" placeholder="输入要让讯飞在线语音播报的内容">
-                    <div style="margin-top: 12px;">
-                        <label class="input-label" for="online-tts-shortcut-select">手工音频列表</label>
-                        <select id="online-tts-shortcut-select" class="quick-select">
-                            <option value="">选择一个手工音频</option>
-                        </select>
-                    </div>
-                    <div class="quick-command-grid" id="online-tts-shortcut-list"></div>
-                    <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
-                        <button type="button" class="primary" id="send-online-tts-btn" disabled>发送讯飞在线语音</button>
-                    </div>
-                </section>
-            </article>
+            </section>
+
+            <section class="domain-block">
+                <div class="domain-header">
+                    <div class="domain-kicker">DOMAIN 02</div>
+                    <h2 class="domain-title">计算机视觉</h2>
+                    <p class="domain-desc">聚焦单目体态链路、模型驱动阶段切换、渲染状态播报与采集引导。</p>
+                </div>
+                <div class="domain-grid">
+                    <article class="card panel compact-panel">
+                        <div>
+                            <h2 class="section-title">体态演示卡片</h2>
+                            <p class="section-desc">体态实时演示控制。</p>
+                        </div>
+                        <section class="bubble-box compact-box">
+                            <div class="quick-command-grid">
+                                <button type="button" id="posture-ready-btn">默认</button>
+                                <button type="button" id="posture-render-btn">渲染</button>
+                                <button type="button" id="posture-step2-btn">阶段2</button>
+                                <button type="button" id="posture-step3-btn">阶段3</button>
+                                <button type="button" id="posture-step4-btn">阶段4</button>
+                                <button type="button" id="posture-reload-btn">重载</button>
+                            </div>
+                        </section>
+                    </article>
+
+                    <article class="card panel">
+                        <div>
+                            <h2 class="section-title">计算机视觉语音</h2>
+                            <p class="section-desc">只保留体态、采集、分析与渲染相关语音，不混入蓝牙播报。</p>
+                        </div>
+                        <section class="bubble-box">
+                            <label class="input-label" for="online-tts-input">发送计算机视觉语音内容</label>
+                            <input type="text" id="online-tts-input" class="bubble-input" placeholder="输入要让设备播报的计算机视觉语音">
+                            <div style="margin-top: 12px;">
+                                <label class="input-label" for="online-tts-shortcut-select">手工音频列表</label>
+                                <select id="online-tts-shortcut-select" class="quick-select">
+                                    <option value="">选择一个手工音频</option>
+                                </select>
+                            </div>
+                            <div class="quick-command-grid" id="tts-shortcut-list"></div>
+                            <div class="quick-command-grid" id="online-tts-shortcut-list"></div>
+                            <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
+                                <button type="button" class="primary" id="send-online-tts-btn" disabled>发送计算机视觉语音</button>
+                                <button type="button" id="add-tts-shortcut-btn" disabled>把当前输入加入视觉快捷语音</button>
+                                <button type="button" id="delete-tts-shortcut-btn" disabled>删除已选视觉快捷语音</button>
+                            </div>
+                        </section>
+                    </article>
+                </div>
+            </section>
+
+            <section class="domain-block">
+                <div class="domain-header">
+                    <div class="domain-kicker">DOMAIN 03</div>
+                    <h2 class="domain-title">AI 智能体</h2>
+                    <p class="domain-desc">当前先预留展示区域，后续再接入智能体编排、解释与决策能力。</p>
+                </div>
+                <div class="domain-grid">
+                    <article class="card panel">
+                        <div>
+                            <h2 class="section-title">能力预留</h2>
+                            <p class="section-desc">AI 智能体模块暂未接入，本区仅保留占位，不影响现有后端控制功能。</p>
+                        </div>
+                        <section class="bubble-box">
+                            <div class="section-desc">后续可在这里接入智能讲解、异常解释、自动策略选择等能力。</div>
+                        </section>
+                    </article>
+                </div>
+            </section>
         </div>
     </div>
 </main>
@@ -567,10 +629,7 @@ def render_ws_control_page() -> str:
     const connectedCountEl = document.getElementById('connected-count');
     const socketPathEl = document.getElementById('socket-path');
     const socketPathSideEl = document.getElementById('socket-path-side');
-    const modeLabelLargeEl = document.getElementById('mode-label-large');
-    const modeDescriptionLargeEl = document.getElementById('mode-description-large');
-    const modePillEl = document.getElementById('mode-pill');
-    const modeDescriptionEl = document.getElementById('mode-description');
+    const embeddedTtsQuickButtons = Array.from(document.querySelectorAll('[data-tts-message]'));
     const pressureModeLabelLargeEl = document.getElementById('pressure-mode-label-large');
     const pressureModeDescriptionLargeEl = document.getElementById('pressure-mode-description-large');
     const pressureModePillEl = document.getElementById('pressure-mode-pill');
@@ -583,7 +642,6 @@ def render_ws_control_page() -> str:
     const sendOnlineTtsBtn = document.getElementById('send-online-tts-btn');
     const onlineTtsShortcutSelectEl = document.getElementById('online-tts-shortcut-select');
     const onlineTtsShortcutListEl = document.getElementById('online-tts-shortcut-list');
-    const ttsShortcutSelectEl = document.getElementById('tts-shortcut-select');
     const ttsShortcutListEl = document.getElementById('tts-shortcut-list');
     const addTtsShortcutBtn = document.getElementById('add-tts-shortcut-btn');
     const deleteTtsShortcutBtn = document.getElementById('delete-tts-shortcut-btn');
@@ -596,11 +654,6 @@ def render_ws_control_page() -> str:
     const postureStep3Btn = document.getElementById('posture-step3-btn');
     const postureStep4Btn = document.getElementById('posture-step4-btn');
     const postureReloadBtn = document.getElementById('posture-reload-btn');
-    const aiModeButtons = {
-        mode1: document.getElementById('mode-mode1'),
-        mode2: document.getElementById('mode-mode2'),
-        mode3: document.getElementById('mode-mode3')
-    };
     const pressureModeButtons = {
         empty: document.getElementById('pressure-mode-empty'),
         direct: document.getElementById('pressure-mode-direct'),
@@ -620,17 +673,18 @@ def render_ws_control_page() -> str:
     });
     const TTS_SHORTCUT_STORAGE_KEY = 'hfood.tts.shortcuts';
     const DEFAULT_TTS_SHORTCUTS = [
-        '我在，有什么问题吗？',
-        '请稍等，正在为您处理。',
-        '当前网络不稳定，请稍后再试。',
-        '操作已完成。',
-        '正在结合足底压力数据与体态数据进行分析，请稍候。',
+        '全链路最终优化驱动已开启。',
+        '原始单目驱动正在开启，请稍后。',
         '数据已经成功采集，正在实时传输到AI算法模块。',
+        '时序平滑优化已开启。',
+        '架构优化与空间约束代码已加载。',
+        '正在分析姿态。',
+        '正在渲染模型。',
+        '请保持全身入镜，缓慢转身、抬手。',
         '请远离摄像头。',
         '请靠近摄像头。',
-        '请保持全身入镜。',
-        '正在分析姿态。',
-        '赵小威爱吃巴蜀人家辣子鸡。'
+        '采集已完成。',
+        '高精度模型已完成渲染，正在同步姿态驱动结果。'
     ];
 
     let ttsShortcutMessages = loadTtsShortcuts();
@@ -648,8 +702,6 @@ def render_ws_control_page() -> str:
     function updateSendTtsButtonState() {
         const currentMessage = ttsInputEl.value.trim();
         sendTtsBtn.disabled = currentMessage.length <= 0;
-        addTtsShortcutBtn.disabled = currentMessage.length <= 0 || ttsShortcutMessages.includes(currentMessage);
-        deleteTtsShortcutBtn.disabled = !ttsShortcutSelectEl.value;
     }
 
     function updateSendOnlineTtsButtonState() {
@@ -669,22 +721,7 @@ def render_ws_control_page() -> str:
         }
     }
 
-    function renderAiMode(data) {
-        const mode = data.mode || 'mode1';
-        const modeLabel = data.modeLabel || '模式 1';
-        const modeDescription = data.modeDescription || '等待后端返回模式说明。';
-
-        modeLabelLargeEl.textContent = modeLabel;
-        modeDescriptionLargeEl.textContent = modeDescription;
-        modePillEl.textContent = modeLabel;
-        modePillEl.className = Object.prototype.hasOwnProperty.call(aiModeButtons, mode)
-            ? `mode-pill ${mode}`
-            : 'mode-pill unknown';
-        modeDescriptionEl.textContent = modeDescription;
-
-        Object.entries(aiModeButtons).forEach(([key, button]) => {
-            button.classList.toggle('active-mode', key === mode);
-        });
+    function renderAiMode(_data) {
     }
 
     function renderPressureDemoMode(data) {
@@ -748,16 +785,7 @@ def render_ws_control_page() -> str:
         window.localStorage.setItem(TTS_SHORTCUT_STORAGE_KEY, JSON.stringify(ttsShortcutMessages));
     }
 
-    function renderTtsShortcuts(selectedMessage = ttsShortcutSelectEl.value) {
-        ttsShortcutSelectEl.innerHTML = '<option value="">选择一条快捷语音</option>';
-        ttsShortcutMessages.forEach((message) => {
-            const option = document.createElement('option');
-            option.value = message;
-            option.textContent = message;
-            option.selected = message === selectedMessage;
-            ttsShortcutSelectEl.appendChild(option);
-        });
-
+    function renderTtsShortcuts(selectedMessage = onlineTtsInputEl.value.trim()) {
         ttsShortcutListEl.innerHTML = '';
         ttsShortcutMessages.forEach((message) => {
             const button = document.createElement('button');
@@ -767,15 +795,14 @@ def render_ws_control_page() -> str:
             button.title = '点击后直接发送这条语音';
             button.classList.toggle('active', message === selectedMessage);
             button.addEventListener('click', () => {
-                ttsShortcutSelectEl.value = message;
-                ttsInputEl.value = message;
-                updateSendTtsButtonState();
-                void sendTtsMessage();
+                onlineTtsInputEl.value = message;
+                updateSendOnlineTtsButtonState();
+                void sendOnlineTtsMessage();
             });
             ttsShortcutListEl.appendChild(button);
         });
-
-        updateSendTtsButtonState();
+        addTtsShortcutBtn.disabled = onlineTtsInputEl.value.trim().length <= 0 || ttsShortcutMessages.includes(onlineTtsInputEl.value.trim());
+        deleteTtsShortcutBtn.disabled = selectedMessage.length <= 0;
     }
 
     function renderOnlineAudioLibrary(selectedFilename = onlineTtsShortcutSelectEl.value) {
@@ -808,29 +835,28 @@ def render_ws_control_page() -> str:
     }
 
     function addCurrentTtsShortcut() {
-        const message = ttsInputEl.value.trim();
+        const message = onlineTtsInputEl.value.trim();
         if (message.length <= 0 || ttsShortcutMessages.includes(message)) {
-            updateSendTtsButtonState();
+            renderTtsShortcuts(message);
             return;
         }
 
         ttsShortcutMessages = [...ttsShortcutMessages, message];
         saveTtsShortcuts();
-        ttsShortcutSelectEl.value = message;
         renderTtsShortcuts(message);
         writeLog(`已加入快捷语音：${message}`);
     }
 
     function deleteSelectedTtsShortcut() {
-        const message = ttsShortcutSelectEl.value;
+        const message = onlineTtsInputEl.value.trim();
         if (!message) {
-            updateSendTtsButtonState();
+            renderTtsShortcuts('');
             return;
         }
 
         ttsShortcutMessages = ttsShortcutMessages.filter(item => item !== message);
         saveTtsShortcuts();
-        ttsShortcutSelectEl.value = '';
+        onlineTtsInputEl.value = '';
         renderTtsShortcuts('');
         writeLog(`已删除快捷语音：${message}`);
     }
@@ -947,8 +973,6 @@ def render_ws_control_page() -> str:
     }
 
     async function switchAiMode(mode) {
-        const buttons = Object.values(aiModeButtons);
-        buttons.forEach(button => button.disabled = true);
         writeLog(`正在切换 AI 模式到 ${mode}...`);
 
         try {
@@ -965,8 +989,6 @@ def render_ws_control_page() -> str:
             writeLog(`切换成功：${(result.data && result.data.modeLabel) || mode}`);
         } catch (error) {
             writeLog(`切换 AI 模式失败：${error}`);
-        } finally {
-            buttons.forEach(button => button.disabled = false);
         }
     }
 
@@ -1224,8 +1246,22 @@ def render_ws_control_page() -> str:
             void sendTtsMessage();
         }
     });
+    embeddedTtsQuickButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const message = String(button.getAttribute('data-tts-message') || '').trim();
+            if (!message) {
+                return;
+            }
+            ttsInputEl.value = message;
+            updateSendTtsButtonState();
+            void sendTtsMessage();
+        });
+    });
 
-    onlineTtsInputEl.addEventListener('input', updateSendOnlineTtsButtonState);
+    onlineTtsInputEl.addEventListener('input', () => {
+        updateSendOnlineTtsButtonState();
+        renderTtsShortcuts(onlineTtsInputEl.value.trim());
+    });
     onlineTtsInputEl.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -1239,15 +1275,6 @@ def render_ws_control_page() -> str:
         if (filename) {
             void playLibraryAudio(filename);
         }
-    });
-
-    ttsShortcutSelectEl.addEventListener('change', () => {
-        const message = ttsShortcutSelectEl.value;
-        if (message) {
-            ttsInputEl.value = message;
-        }
-        renderTtsShortcuts(message);
-        updateSendTtsButtonState();
     });
 
     addTtsShortcutBtn.addEventListener('click', addCurrentTtsShortcut);
@@ -1281,9 +1308,6 @@ def render_ws_control_page() -> str:
     postureReloadBtn.addEventListener('click', () => void sendPostureDemoReload());
     setActiveStageButton(postureReadyBtn);
 
-    aiModeButtons.mode1.addEventListener('click', () => switchAiMode('mode1'));
-    aiModeButtons.mode2.addEventListener('click', () => switchAiMode('mode2'));
-    aiModeButtons.mode3.addEventListener('click', () => switchAiMode('mode3'));
     pressureModeButtons.empty.addEventListener('click', () => switchPressureDemoMode('empty'));
     pressureModeButtons.direct.addEventListener('click', () => switchPressureDemoMode('direct'));
     pressureModeButtons.repair.addEventListener('click', () => switchPressureDemoMode('repair'));

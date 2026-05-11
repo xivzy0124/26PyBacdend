@@ -21,17 +21,17 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     "render": {
         "mode": "render",
         "title": "渲染",
-        "message": "右侧 Man.vrm 开始跟随左侧真人驱动，但存在明显抖动和跳变",
-        "phase": "tracking",
-        "bodyDetected": True,
-        "trackingReady": True,
-        "cameraActive": True,
+        "message": "右侧加载模型3并保持默认动作，不进行人体识别和驱动",
+        "phase": "ready",
+        "bodyDetected": False,
+        "trackingReady": False,
+        "cameraActive": False,
         "demoLocked": False,
     },
     "stage2": {
         "mode": "stage2",
-        "title": "阶段2",
-        "message": "右侧 Man.vrm 继续跟随左侧真人驱动，但存在较高延迟和不丝滑",
+        "title": "阶段二",
+        "message": "右侧模型3进入数字孪生驱动，但保留明显抖动问题",
         "phase": "tracking",
         "bodyDetected": True,
         "trackingReady": True,
@@ -40,8 +40,8 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     },
     "stage3": {
         "mode": "stage3",
-        "title": "阶段3",
-        "message": "右侧 Man.vrm 恢复正常实时驱动链路",
+        "title": "阶段三",
+        "message": "右侧模型3继续数字孪生驱动，但存在高延迟",
         "phase": "tracking",
         "bodyDetected": True,
         "trackingReady": True,
@@ -50,8 +50,8 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     },
     "stage4": {
         "mode": "stage4",
-        "title": "阶段4",
-        "message": "切换到模型3，并恢复正常实时驱动链路",
+        "title": "阶段四",
+        "message": "右侧模型3恢复正常数字孪生实时驱动",
         "phase": "tracking",
         "bodyDetected": True,
         "trackingReady": True,
@@ -67,6 +67,49 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
         "trackingReady": False,
         "cameraActive": False,
         "demoLocked": False,
+    },
+}
+
+DEMO_POSTURE_PRESETS: dict[str, dict[str, object]] = {
+    "render": {
+        "mode": "render",
+        "title": "渲染",
+        "message": "右侧显示渲染中进度条，60秒后展示 sr.glb 静态默认姿态",
+        "phase": "ready",
+        "bodyDetected": False,
+        "trackingReady": False,
+        "cameraActive": False,
+        "autoNavigate": True,
+    },
+    "stage2": {
+        "mode": "stage2",
+        "title": "跳变",
+        "message": "sr.glb 进入明显跳变与抖动驱动演示",
+        "phase": "tracking",
+        "bodyDetected": True,
+        "trackingReady": True,
+        "cameraActive": True,
+        "autoNavigate": True,
+    },
+    "stage3": {
+        "mode": "stage3",
+        "title": "延迟",
+        "message": "sr.glb 进入高延迟驱动演示",
+        "phase": "tracking",
+        "bodyDetected": True,
+        "trackingReady": True,
+        "cameraActive": True,
+        "autoNavigate": True,
+    },
+    "stage4": {
+        "mode": "stage4",
+        "title": "正常",
+        "message": "sr.glb 恢复完全正常的实时驱动",
+        "phase": "tracking",
+        "bodyDetected": True,
+        "trackingReady": True,
+        "cameraActive": True,
+        "autoNavigate": True,
     },
 }
 
@@ -215,6 +258,45 @@ async def notify_posture_demo_reload(
     }
     message = (
         "posture demo reload sent"
+        if delivered_count > 0
+        else "no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/ws/harmony/demo-posture", response_model=ApiResponse)
+async def notify_demo_posture(
+    payload: PostureDemoCommandRequest,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    action = payload.action.strip().lower()
+    demo_preset = DEMO_POSTURE_PRESETS.get(action)
+    if demo_preset is None:
+        return ApiResponse.error(400, f"unsupported demo posture action: {payload.action}")
+
+    connected_clients = container.connection_manager.get_connected_count()
+    delivered_count = await container.connection_manager.send_demo_posture_command(
+        mode=str(demo_preset["mode"]),
+        title=str(demo_preset["title"]),
+        message_text=str(demo_preset["message"]),
+        phase=str(demo_preset["phase"]),
+        body_detected=bool(demo_preset["bodyDetected"]),
+        tracking_ready=bool(demo_preset["trackingReady"]),
+        camera_active=bool(demo_preset["cameraActive"]),
+        auto_navigate=bool(demo_preset["autoNavigate"]),
+    )
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "action": action,
+        "mode": demo_preset["mode"],
+        "title": demo_preset["title"],
+        "message": demo_preset["message"],
+        "phase": demo_preset["phase"],
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "demo posture command sent"
         if delivered_count > 0
         else "no Harmony app websocket clients connected"
     )

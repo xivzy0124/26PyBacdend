@@ -91,6 +91,13 @@ class HarmonyAppWebSocketMessage(BaseModel):
     postureDemoCameraActive: bool | None = None
     postureDemoLocked: bool | None = None
     postureDemoReload: bool | None = None
+    demoPostureMode: str | None = None
+    demoPostureTitle: str | None = None
+    demoPosturePhase: str | None = None
+    demoPostureBodyDetected: bool | None = None
+    demoPostureTrackingReady: bool | None = None
+    demoPostureCameraActive: bool | None = None
+    demoPostureAutoNavigate: bool | None = None
     pressureDemoMode: str | None = None
     pressureDemoModeLabel: str | None = None
     pressureDemoModeDescription: str | None = None
