@@ -620,16 +620,29 @@ def render_ws_control_page() -> str:
                 <div class="domain-header">
                     <div class="domain-kicker">DOMAIN 03</div>
                     <h2 class="domain-title">AI 智能体</h2>
-                    <p class="domain-desc">当前先预留展示区域，后续再接入智能体编排、解释与决策能力。</p>
+                    <p class="domain-desc">保留 AI 智能体独立在线语音链路，使用 ai_cache 与 ai_library。</p>
                 </div>
                 <div class="domain-grid">
                     <article class="card panel">
                         <div>
-                            <h2 class="section-title">能力预留</h2>
-                            <p class="section-desc">AI 智能体模块暂未接入，本区仅保留占位，不影响现有后端控制功能。</p>
+                            <h2 class="section-title">AI 智能体在线语音</h2>
+                            <p class="section-desc">AI 智能体板块使用独立在线语音接口与独立音频库目录。</p>
                         </div>
                         <section class="bubble-box">
-                            <div class="section-desc">后续可在这里接入智能讲解、异常解释、自动策略选择等能力。</div>
+                            <label class="input-label" for="ai-tts-input">发送 AI 智能体语音内容</label>
+                            <input type="text" id="ai-tts-input" class="bubble-input" placeholder="输入要让设备播报的 AI 智能体语音">
+                            <div style="margin-top: 12px;">
+                                <label class="input-label" for="ai-library-select">AI 智能体音频库</label>
+                                <select id="ai-library-select" class="quick-select">
+                                    <option value="">选择一个 AI 智能体音频</option>
+                                </select>
+                            </div>
+                            <div class="quick-command-grid" id="ai-library-list"></div>
+                            <div class="row" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
+                                <button type="button" class="primary" id="send-ai-tts-btn" disabled>发送 AI 智能体在线语音</button>
+                                <button type="button" id="add-ai-library-btn" disabled>加入 AI 智能体语音库</button>
+                            </div>
+                            <div class="section-desc" id="ai-cache-hint">发送后会先进入 cache，再可加入 AI 智能体语音库。</div>
                         </section>
                     </article>
                 </div>
@@ -664,6 +677,12 @@ def render_ws_control_page() -> str:
     const cvCacheHintEl = document.getElementById('cv-cache-hint');
     const cvLibrarySelectEl = document.getElementById('cv-library-select');
     const cvLibraryListEl = document.getElementById('cv-library-list');
+    const aiTtsInputEl = document.getElementById('ai-tts-input');
+    const sendAiTtsBtn = document.getElementById('send-ai-tts-btn');
+    const addAiLibraryBtn = document.getElementById('add-ai-library-btn');
+    const aiCacheHintEl = document.getElementById('ai-cache-hint');
+    const aiLibrarySelectEl = document.getElementById('ai-library-select');
+    const aiLibraryListEl = document.getElementById('ai-library-list');
     const logBodyEl = document.getElementById('log-body');
     const testBtn = document.getElementById('test-btn');
     const refreshBtn = document.getElementById('refresh-btn');
@@ -698,10 +717,16 @@ def render_ws_control_page() -> str:
         activeAccountName: '',
         defaultVcn: 'xiaoyan'
     };
+    let aiOnlineTtsRuntimeConfig = {
+        activeAccountName: '',
+        defaultVcn: 'xiaoyan'
+    };
     let embeddedLibraryItems = [];
     let cvLibraryItems = [];
+    let aiLibraryItems = [];
     let lastEmbeddedCacheFilename = '';
     let lastCvCacheFilename = '';
+    let lastAiCacheFilename = '';
 
     function writeLog(message) {
         const now = SHANGHAI_TIME_FORMATTER.format(new Date());
@@ -718,6 +743,12 @@ def render_ws_control_page() -> str:
         const currentMessage = cvTtsInputEl.value.trim();
         sendCvTtsBtn.disabled = currentMessage.length <= 0;
         addCvLibraryBtn.disabled = lastCvCacheFilename.length <= 0;
+    }
+
+    function updateSendAiTtsButtonState() {
+        const currentMessage = aiTtsInputEl.value.trim();
+        sendAiTtsBtn.disabled = currentMessage.length <= 0;
+        addAiLibraryBtn.disabled = lastAiCacheFilename.length <= 0;
     }
 
     function updateSendLocalTtsButtonState() {
@@ -789,6 +820,13 @@ def render_ws_control_page() -> str:
         };
     }
 
+    function renderAiOnlineTtsVoiceOptions(config) {
+        aiOnlineTtsRuntimeConfig = {
+            activeAccountName: (config && config.activeAccountName) || '',
+            defaultVcn: (config && config.defaultVcn) || 'xiaoyan'
+        };
+    }
+
     function renderEmbeddedAudioLibrary(selectedFilename = embeddedLibrarySelectEl.value) {
         embeddedLibrarySelectEl.innerHTML = '<option value="">选择一个嵌入式音频</option>';
         embeddedLibraryItems.forEach((item) => {
@@ -840,6 +878,33 @@ def render_ws_control_page() -> str:
                 void playCvLibraryAudio(item.filename);
             });
             cvLibraryListEl.appendChild(button);
+        });
+    }
+
+    function renderAiAudioLibrary(selectedFilename = aiLibrarySelectEl.value) {
+        aiLibrarySelectEl.innerHTML = '<option value="">选择一个 AI 智能体音频</option>';
+        aiLibraryItems.forEach((item) => {
+            const option = document.createElement('option');
+            option.value = item.filename;
+            option.textContent = item.displayName;
+            option.selected = item.filename === selectedFilename;
+            aiLibrarySelectEl.appendChild(option);
+        });
+
+        aiLibraryListEl.innerHTML = '';
+        aiLibraryItems.forEach((item) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'quick-command-btn';
+            button.textContent = item.displayName;
+            button.title = '点击后直接播放这条 AI 智能体音频';
+            button.classList.toggle('active', item.filename === selectedFilename);
+            button.addEventListener('click', () => {
+                aiLibrarySelectEl.value = item.filename;
+                renderAiAudioLibrary(item.filename);
+                void playAiLibraryAudio(item.filename);
+            });
+            aiLibraryListEl.appendChild(button);
         });
     }
 
@@ -992,6 +1057,47 @@ def render_ws_control_page() -> str:
             }
         } catch (error) {
             writeLog(`计算机视觉音频库刷新失败：${error}`);
+        }
+    }
+
+    async function refreshAiOnlineTtsConfig(silent = true) {
+        try {
+            const response = await fetch('/api/tts/ai/config', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            const data = result.data || {};
+            renderAiOnlineTtsVoiceOptions(data);
+            if (!silent && data.activeAccountName) {
+                writeLog(`AI 智能体在线语音配置已刷新，当前账号：${data.activeAccountName}，默认音色：${data.defaultVcn || 'xiaoyan'}。`);
+            }
+        } catch (error) {
+            writeLog(`AI 智能体在线语音配置刷新失败：${error}`);
+        }
+    }
+
+    async function refreshAiAudioLibrary(silent = true) {
+        try {
+            const response = await fetch('/api/tts/ai/library', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            const data = Array.isArray(result.data) ? result.data : [];
+            aiLibraryItems = data
+                .map((item) => ({
+                    filename: String(item.filename || '').trim(),
+                    displayName: String(item.displayName || item.filename || '').trim(),
+                    audioUrl: String(item.audioUrl || '').trim()
+                }))
+                .filter((item) => item.filename.length > 0 && item.displayName.length > 0);
+            renderAiAudioLibrary();
+            if (!silent) {
+                writeLog(`AI 智能体音频库已刷新，当前共 ${aiLibraryItems.length} 条。`);
+            }
+        } catch (error) {
+            writeLog(`AI 智能体音频库刷新失败：${error}`);
         }
     }
 
@@ -1200,6 +1306,47 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function sendAiOnlineTtsMessage() {
+        const message = aiTtsInputEl.value.trim();
+        if (message.length <= 0) {
+            updateSendAiTtsButtonState();
+            return;
+        }
+
+        sendAiTtsBtn.disabled = true;
+        writeLog(`正在发送 AI 智能体在线语音：${message}`);
+
+        try {
+            const response = await fetch('/api/ws/harmony/notify-ai-online-tts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`发送 AI 智能体在线语音失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            lastAiCacheFilename = String(data.filename || '').trim();
+            aiCacheHintEl.textContent = lastAiCacheFilename
+                ? `最近生成的 AI 智能体缓存文件：${lastAiCacheFilename}`
+                : '发送后会先进入 cache，再可加入 AI 智能体语音库。';
+            writeLog(`AI 智能体在线语音发送完成，内容“${data.message || message}”，文件 ${data.filename || '未返回'}，音色 ${data.voiceName || aiOnlineTtsRuntimeConfig.defaultVcn || 'xiaoyan'}，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+            aiTtsInputEl.value = '';
+            updateSendAiTtsButtonState();
+            void refreshAiAudioLibrary(true);
+        } catch (error) {
+            writeLog(`发送 AI 智能体在线语音失败：${error}`);
+        } finally {
+            updateSendAiTtsButtonState();
+        }
+    }
+
     async function addEmbeddedCacheToLibrary() {
         if (!lastEmbeddedCacheFilename) {
             return;
@@ -1255,6 +1402,35 @@ def render_ws_control_page() -> str:
             writeLog(`加入计算机视觉语音库失败：${error}`);
         } finally {
             updateSendCvTtsButtonState();
+        }
+    }
+
+    async function addAiCacheToLibrary() {
+        if (!lastAiCacheFilename) {
+            return;
+        }
+        addAiLibraryBtn.disabled = true;
+        writeLog(`正在将 AI 智能体缓存音频加入语音库：${lastAiCacheFilename}`);
+        try {
+            const response = await fetch('/api/tts/ai/promote-cache', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: lastAiCacheFilename })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`加入 AI 智能体语音库失败：${result.message || '未知错误'}`);
+                return;
+            }
+            aiCacheHintEl.textContent = `已加入 AI 智能体语音库：${lastAiCacheFilename}`;
+            writeLog(`AI 智能体缓存音频已加入语音库：${lastAiCacheFilename}`);
+            void refreshAiAudioLibrary(true);
+        } catch (error) {
+            writeLog(`加入 AI 智能体语音库失败：${error}`);
+        } finally {
+            updateSendAiTtsButtonState();
         }
     }
 
@@ -1381,6 +1557,35 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function playAiLibraryAudio(filename) {
+        const normalizedFilename = String(filename || '').trim();
+        if (normalizedFilename.length <= 0) {
+            return;
+        }
+
+        writeLog(`正在播放 AI 智能体音频：${normalizedFilename}`);
+        try {
+            const response = await fetch('/api/ws/harmony/play-ai-library-audio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: normalizedFilename })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`播放 AI 智能体音频失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            writeLog(`AI 智能体音频播放完成，文件“${data.filename || normalizedFilename}”，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+        } catch (error) {
+            writeLog(`播放 AI 智能体音频失败：${error}`);
+        }
+    }
+
     refreshBtn.addEventListener('click', async () => {
         await refreshDeviceStatus(false);
         await refreshAiMode(false);
@@ -1390,12 +1595,15 @@ def render_ws_control_page() -> str:
         await refreshEmbeddedAudioLibrary(false);
         await refreshCvOnlineTtsConfig(false);
         await refreshCvAudioLibrary(false);
+        await refreshAiOnlineTtsConfig(false);
+        await refreshAiAudioLibrary(false);
     });
 
     testBtn.addEventListener('click', testConnection);
     sendLocalTtsBtn.addEventListener('click', sendLocalTtsMessage);
     sendEmbeddedTtsBtn.addEventListener('click', sendEmbeddedOnlineTtsMessage);
     sendCvTtsBtn.addEventListener('click', sendCvOnlineTtsMessage);
+    sendAiTtsBtn.addEventListener('click', sendAiOnlineTtsMessage);
 
     localTtsInputEl.addEventListener('input', updateSendLocalTtsButtonState);
     localTtsInputEl.addEventListener('keydown', (event) => {
@@ -1437,6 +1645,22 @@ def render_ws_control_page() -> str:
         }
     });
     addCvLibraryBtn.addEventListener('click', addCvCacheToLibrary);
+
+    aiTtsInputEl.addEventListener('input', updateSendAiTtsButtonState);
+    aiTtsInputEl.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            void sendAiOnlineTtsMessage();
+        }
+    });
+    aiLibrarySelectEl.addEventListener('change', () => {
+        const filename = aiLibrarySelectEl.value;
+        renderAiAudioLibrary(filename);
+        if (filename) {
+            void playAiLibraryAudio(filename);
+        }
+    });
+    addAiLibraryBtn.addEventListener('click', addAiCacheToLibrary);
     postureReadyBtn.textContent = '默认';
     postureRenderBtn.textContent = '渲染';
     postureStep2Btn.textContent = '阶段2';
@@ -1474,9 +1698,11 @@ def render_ws_control_page() -> str:
 
     renderEmbeddedAudioLibrary();
     renderCvAudioLibrary();
+    renderAiAudioLibrary();
     updateSendLocalTtsButtonState();
     updateSendEmbeddedTtsButtonState();
     updateSendCvTtsButtonState();
+    updateSendAiTtsButtonState();
     refreshDeviceStatus(false);
     refreshAiMode(false);
     refreshPressureDemoMode(false);
@@ -1485,6 +1711,8 @@ def render_ws_control_page() -> str:
     refreshEmbeddedAudioLibrary(false);
     refreshCvOnlineTtsConfig(false);
     refreshCvAudioLibrary(false);
+    refreshAiOnlineTtsConfig(false);
+    refreshAiAudioLibrary(false);
 
     window.setInterval(() => {
         refreshDeviceStatus(true);
@@ -1496,6 +1724,8 @@ def render_ws_control_page() -> str:
         refreshEmbeddedAudioLibrary(true);
         refreshCvOnlineTtsConfig(true);
         refreshCvAudioLibrary(true);
+        refreshAiOnlineTtsConfig(true);
+        refreshAiAudioLibrary(true);
     }, 5000);
 </script>
 </body>
