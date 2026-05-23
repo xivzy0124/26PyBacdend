@@ -143,6 +143,27 @@ class HarmonyConnectionManager:
         )
         return await self.broadcast(message)
 
+    async def send_ai_coach_media_control(
+        self,
+        action: str,
+        message_text: str,
+        video_url: str,
+        loop: bool,
+        return_to_idle: bool,
+        audio_duration_ms: int,
+    ) -> int:
+        message = HarmonyAppWebSocketMessage(
+            type="ai_coach_media_control",
+            message=message_text,
+            timestamp=now_timestamp_ms(),
+            aiCoachAction=action,
+            aiCoachVideoUrl=video_url,
+            aiCoachLoop=loop,
+            aiCoachReturnToIdle=return_to_idle,
+            aiCoachAudioDurationMs=audio_duration_ms,
+        )
+        return await self.broadcast(message)
+
     async def broadcast(self, message: HarmonyAppWebSocketMessage) -> int:
         self._cleanup_closed_sessions()
         with self._lock:

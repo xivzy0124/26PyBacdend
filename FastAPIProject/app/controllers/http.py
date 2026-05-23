@@ -1,11 +1,14 @@
 ﻿from __future__ import annotations
 
+import os
+
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
 from app.container import AppContainer, get_container_from_request
 from app.core.config import settings
 from app.models.schemas import (
+    AiCoachActionRequest,
     ApiResponse,
     BubbleMessageRequest,
     LibraryAudioPlayRequest,
@@ -22,7 +25,7 @@ POSTURE_DEMO_PRESETS: dict[str, dict[str, object]] = {
     "render": {
         "mode": "render",
         "title": "渲染",
-        "message": "右侧加载模型3并保持默认动作，不进行人体识别和驱动",
+        "message": "全屏展示模型3渲染进度，完成后模型保持慢速旋转",
         "phase": "ready",
         "bodyDetected": False,
         "trackingReady": False,
@@ -75,7 +78,7 @@ DEMO_POSTURE_PRESETS: dict[str, dict[str, object]] = {
     "render": {
         "mode": "render",
         "title": "渲染",
-        "message": "右侧显示渲染中进度条，60秒后展示 sr.glb 静态默认姿态",
+        "message": "全屏展示渲染中进度条，完成后 sr.glb 保持慢速旋转",
         "phase": "ready",
         "bodyDetected": False,
         "trackingReady": False,
@@ -114,6 +117,107 @@ DEMO_POSTURE_PRESETS: dict[str, dict[str, object]] = {
     },
 }
 
+AI_COACH_ACTION_PRESETS: dict[str, dict[str, object]] = {
+    "speech1": {
+        "action": "speech1",
+        "title": "讲话1",
+        "message": "AI回复中",
+        "mediaKey": "speech",
+        "videoFilename": "讲话.mp4",
+        "audioFilename": "重心左偏，建议挥拍时手肘抬高。.mp3",
+        "loop": True,
+        "returnToIdle": False,
+    },
+    "speech2": {
+        "action": "speech2",
+        "title": "讲话2",
+        "message": "AI回复中",
+        "mediaKey": "speech",
+        "videoFilename": "讲话.mp4",
+        "audioFilename": "没问题，现在咱们就开始。现在你试着做一遍完整的挥拍：先转胯带动身体，然后小臂外旋同时往上挥，击球点要在你右前方最高的位置，最后自然收拍贴到左腋下。.mp3",
+        "loop": True,
+        "returnToIdle": False,
+    },
+    "speech3": {
+        "action": "speech3",
+        "title": "讲话3",
+        "message": "AI回复中",
+        "mediaKey": "speech",
+        "videoFilename": "讲话.mp4",
+        "audioFilename": "刚才挥拍时转体的衔接很顺，但随挥动作没有收住，拍子挥得太靠后了。你试着在击球后让小臂带着拍子自然落到左胯位置，而不是甩到身后，这样既能保护肩肘，还能更快回位准备下一拍。.mp3",
+        "loop": True,
+        "returnToIdle": False,
+    },
+    "encourage": {
+        "action": "encourage",
+        "title": "鼓励",
+        "message": "播放鼓励示例",
+        "mediaKey": "encourage",
+        "videoFilename": "鼓励.mp4",
+        "audioFilename": "今天你的手肘角度是8°，比上周改善了2°！再减少1°就能进入安全区！”进步最快的是你的右髋控制能力，连续3次训练都在提升！！！！！.mp3",
+        "loop": False,
+        "returnToIdle": True,
+    },
+}
+
+AI_COACH_MEDIA_FILES: dict[str, str] = {
+    "idle": "常态待机.mp4",
+    "speech": "讲话.mp4",
+    "encourage": "鼓励.mp4",
+}
+
+MPEG1_LAYER3_BITRATES_KBPS: dict[int, int] = {
+    1: 32,
+    2: 40,
+    3: 48,
+    4: 56,
+    5: 64,
+    6: 80,
+    7: 96,
+    8: 112,
+    9: 128,
+    10: 160,
+    11: 192,
+    12: 224,
+    13: 256,
+    14: 320,
+}
+
+MPEG2_LAYER3_BITRATES_KBPS: dict[int, int] = {
+    1: 8,
+    2: 16,
+    3: 24,
+    4: 32,
+    5: 40,
+    6: 48,
+    7: 56,
+    8: 64,
+    9: 80,
+    10: 96,
+    11: 112,
+    12: 128,
+    13: 144,
+    14: 160,
+}
+
+MPEG1_SAMPLE_RATES: dict[int, int] = {
+    0: 44100,
+    1: 48000,
+    2: 32000,
+}
+
+MPEG2_SAMPLE_RATES: dict[int, int] = {
+    0: 22050,
+    1: 24000,
+    2: 16000,
+}
+
+MPEG25_SAMPLE_RATES: dict[int, int] = {
+    0: 11025,
+    1: 12000,
+    2: 8000,
+}
+
 
 @router.get("/", include_in_schema=False)
 async def root() -> RedirectResponse:
@@ -123,6 +227,88 @@ async def root() -> RedirectResponse:
 @router.get("/ws-control.html", response_class=HTMLResponse, include_in_schema=False)
 async def ws_control_page() -> HTMLResponse:
     return HTMLResponse(render_ws_control_page())
+
+
+@router.get("/api/ai-coach/media/{media_key}", include_in_schema=False)
+async def get_ai_coach_media(media_key: str) -> FileResponse:
+    normalized_key = media_key.strip().lower()
+    filename = AI_COACH_MEDIA_FILES.get(normalized_key)
+    if filename is None:
+        raise FileNotFoundError(f"unknown ai coach media: {media_key}")
+
+    file_path = os.path.abspath(os.path.join(settings.desktop_media_dir, filename))
+    media_root = os.path.abspath(settings.desktop_media_dir)
+    if not file_path.startswith(media_root):
+        raise FileNotFoundError("invalid ai coach media path")
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"ai coach media file not found: {filename}")
+
+    return FileResponse(path=file_path, media_type="video/mp4", filename=filename)
+
+
+def read_mp3_duration_ms(file_path: str) -> int:
+    try:
+        with open(file_path, "rb") as file:
+            audio_bytes = file.read()
+    except OSError:
+        return 0
+
+    byte_length = len(audio_bytes)
+    if byte_length < 4:
+        return 0
+
+    offset = 0
+    if byte_length >= 10 and audio_bytes[0:3] == b"ID3":
+        tag_size = (
+            ((audio_bytes[6] & 0x7F) << 21) |
+            ((audio_bytes[7] & 0x7F) << 14) |
+            ((audio_bytes[8] & 0x7F) << 7) |
+            (audio_bytes[9] & 0x7F)
+        )
+        offset = min(byte_length - 4, 10 + tag_size)
+
+    while offset <= byte_length - 4:
+        header = (
+            (audio_bytes[offset] << 24) |
+            (audio_bytes[offset + 1] << 16) |
+            (audio_bytes[offset + 2] << 8) |
+            audio_bytes[offset + 3]
+        )
+
+        if (header & 0xFFE00000) != 0xFFE00000:
+            offset += 1
+            continue
+
+        version_bits = (header >> 19) & 0x3
+        layer_bits = (header >> 17) & 0x3
+        bitrate_index = (header >> 12) & 0xF
+        sample_rate_index = (header >> 10) & 0x3
+
+        if layer_bits != 0x1 or bitrate_index == 0 or bitrate_index == 0xF or sample_rate_index == 0x3:
+            offset += 1
+            continue
+
+        if version_bits == 0x3:
+            bitrate_kbps = MPEG1_LAYER3_BITRATES_KBPS.get(bitrate_index, 0)
+            sample_rate = MPEG1_SAMPLE_RATES.get(sample_rate_index, 0)
+        elif version_bits == 0x2:
+            bitrate_kbps = MPEG2_LAYER3_BITRATES_KBPS.get(bitrate_index, 0)
+            sample_rate = MPEG2_SAMPLE_RATES.get(sample_rate_index, 0)
+        elif version_bits == 0x0:
+            bitrate_kbps = MPEG2_LAYER3_BITRATES_KBPS.get(bitrate_index, 0)
+            sample_rate = MPEG25_SAMPLE_RATES.get(sample_rate_index, 0)
+        else:
+            offset += 1
+            continue
+
+        if bitrate_kbps <= 0 or sample_rate <= 0:
+            offset += 1
+            continue
+
+        duration_seconds = (byte_length - offset) * 8 / (bitrate_kbps * 1000)
+        return max(0, int(duration_seconds * 1000))
+
+    return 0
 
 
 @router.get("/api/ws/harmony/status", response_model=ApiResponse)
@@ -652,6 +838,66 @@ async def play_ai_library_audio(
         "ai library audio notification sent"
         if delivered_count > 0
         else "audio selected but no Harmony app websocket clients connected"
+    )
+    return ApiResponse.success(data, message)
+
+
+@router.post("/api/ws/harmony/ai-coach-action", response_model=ApiResponse)
+async def notify_ai_coach_action(
+    payload: AiCoachActionRequest,
+    request: Request,
+    container: AppContainer = Depends(get_container_from_request),
+) -> ApiResponse:
+    action = payload.action.strip().lower()
+    preset = AI_COACH_ACTION_PRESETS.get(action)
+    if preset is None:
+        return ApiResponse.error(400, f"unsupported ai coach action: {payload.action}")
+
+    video_url = build_public_asset_url(request, f"/api/ai-coach/media/{preset['mediaKey']}")
+    try:
+        library_audio = container.ai_online_tts_service.resolve_library_audio_asset(str(preset["audioFilename"]))
+    except ValueError as error:
+        return ApiResponse.error(400, str(error))
+    except FileNotFoundError:
+        return ApiResponse.error(404, f"audio file not found: {preset['audioFilename']}")
+
+    audio_url = build_public_asset_url(request, library_audio.relative_url)
+    audio_duration_ms = read_mp3_duration_ms(
+        os.path.abspath(os.path.join(settings.ai_library_dir, library_audio.filename))
+    )
+    connected_clients = container.connection_manager.get_connected_count()
+    media_delivered_count = await container.connection_manager.send_ai_coach_media_control(
+        action=str(preset["action"]),
+        message_text=str(preset["message"]),
+        video_url=video_url,
+        loop=bool(preset["loop"]),
+        return_to_idle=bool(preset["returnToIdle"]),
+        audio_duration_ms=audio_duration_ms,
+    )
+    audio_delivered_count = await container.connection_manager.send_app_audio_play(
+        audio_url=audio_url,
+        message_text=library_audio.display_name,
+        audio_content_type=library_audio.content_type,
+    )
+    delivered_count = min(media_delivered_count, audio_delivered_count)
+    data = {
+        "connectedClients": connected_clients,
+        "deliveredCount": delivered_count,
+        "videoDeliveredCount": media_delivered_count,
+        "audioDeliveredCount": audio_delivered_count,
+        "action": preset["action"],
+        "title": preset["title"],
+        "message": preset["message"],
+        "videoUrl": video_url,
+        "audioUrl": audio_url,
+        "audioFilename": library_audio.filename,
+        "audioDurationMs": audio_duration_ms,
+        "webSocketPath": "/ws/harmony-app",
+    }
+    message = (
+        "ai coach action sent"
+        if delivered_count > 0
+        else "ai coach action selected but no Harmony app websocket clients connected"
     )
     return ApiResponse.success(data, message)
 

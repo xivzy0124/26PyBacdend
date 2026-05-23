@@ -104,6 +104,11 @@ class HarmonyAppWebSocketMessage(BaseModel):
     pressureTraceMode: str | None = None
     pressureTraceModeLabel: str | None = None
     pressureTraceModeDescription: str | None = None
+    aiCoachAction: str | None = None
+    aiCoachVideoUrl: str | None = None
+    aiCoachLoop: bool | None = None
+    aiCoachReturnToIdle: bool | None = None
+    aiCoachAudioDurationMs: int | None = None
 
 
 class BubbleMessageRequest(BaseModel):
@@ -111,6 +116,10 @@ class BubbleMessageRequest(BaseModel):
 
 
 class PostureDemoCommandRequest(BaseModel):
+    action: str
+
+
+class AiCoachActionRequest(BaseModel):
     action: str
 
 

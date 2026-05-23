@@ -625,6 +625,22 @@ def render_ws_control_page() -> str:
                 <div class="domain-grid">
                     <article class="card panel">
                         <div>
+                            <h2 class="section-title">AI 分析样本</h2>
+                            <p class="section-desc">默认是非正常样本；可切到正常样本查看标准流式分析过程。</p>
+                        </div>
+                        <section class="mode-box">
+                            <div class="row">
+                                <span class="mode-pill unknown" id="ai-mode-pill">非正常</span>
+                            </div>
+                            <p class="section-desc" id="ai-mode-description">当前默认展示的是非正常样本分析流式输出。</p>
+                            <div class="mode-actions">
+                                <button type="button" id="ai-mode-normal">正常</button>
+                                <button type="button" id="ai-mode-abnormal" class="active-mode">非正常</button>
+                            </div>
+                        </section>
+                    </article>
+                    <article class="card panel">
+                        <div>
                             <h2 class="section-title">AI 智能体在线语音</h2>
                             <p class="section-desc">AI 智能体板块使用独立在线语音接口与独立音频库目录。</p>
                         </div>
@@ -643,6 +659,23 @@ def render_ws_control_page() -> str:
                                 <button type="button" id="add-ai-library-btn" disabled>加入 AI 智能体语音库</button>
                             </div>
                             <div class="section-desc" id="ai-cache-hint">发送后会先进入 cache，再可加入 AI 智能体语音库。</div>
+                        </section>
+                    </article>
+                    <article class="card panel">
+                        <div>
+                            <h2 class="section-title">AI 陪练动作</h2>
+                            <p class="section-desc">点击后会同步切换前端 AI 陪练右侧视频，并播放对应语音。</p>
+                        </div>
+                        <section class="action-box">
+                            <div class="action-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                                <button type="button" id="ai-coach-speech1-btn">讲话1</button>
+                                <button type="button" id="ai-coach-speech2-btn">讲话2</button>
+                                <button type="button" id="ai-coach-speech3-btn">讲话3</button>
+                                <button type="button" class="primary" id="ai-coach-encourage-btn">鼓励</button>
+                            </div>
+                            <div class="section-desc" style="margin-top: 10px;">
+                                讲话按钮会切到桌面 `讲话.mp4` 并播放对应 `mp3`，鼓励会切到 `鼓励.mp4` 播放一次后自动回到 `常态待机.mp4`。
+                            </div>
                         </section>
                     </article>
                 </div>
@@ -683,6 +716,14 @@ def render_ws_control_page() -> str:
     const aiCacheHintEl = document.getElementById('ai-cache-hint');
     const aiLibrarySelectEl = document.getElementById('ai-library-select');
     const aiLibraryListEl = document.getElementById('ai-library-list');
+    const aiModePillEl = document.getElementById('ai-mode-pill');
+    const aiModeDescriptionEl = document.getElementById('ai-mode-description');
+    const aiModeNormalBtn = document.getElementById('ai-mode-normal');
+    const aiModeAbnormalBtn = document.getElementById('ai-mode-abnormal');
+    const aiCoachSpeech1Btn = document.getElementById('ai-coach-speech1-btn');
+    const aiCoachSpeech2Btn = document.getElementById('ai-coach-speech2-btn');
+    const aiCoachSpeech3Btn = document.getElementById('ai-coach-speech3-btn');
+    const aiCoachEncourageBtn = document.getElementById('ai-coach-encourage-btn');
     const logBodyEl = document.getElementById('log-body');
     const testBtn = document.getElementById('test-btn');
     const refreshBtn = document.getElementById('refresh-btn');
@@ -769,7 +810,15 @@ def render_ws_control_page() -> str:
         }
     }
 
-    function renderAiMode(_data) {
+    function renderAiMode(data) {
+        const mode = data.mode || 'mode2';
+        const modeLabel = data.modeLabel || (mode === 'mode1' ? '正常' : '非正常');
+        const modeDescription = data.modeDescription || '等待后端返回 AI 模式说明。';
+        aiModePillEl.textContent = modeLabel;
+        aiModePillEl.className = `mode-pill ${mode === 'mode1' ? 'normal' : (mode === 'mode2' ? 'jitter' : 'mode3')}`;
+        aiModeDescriptionEl.textContent = modeDescription;
+        aiModeNormalBtn.classList.toggle('active-mode', mode === 'mode1');
+        aiModeAbnormalBtn.classList.toggle('active-mode', mode !== 'mode1');
     }
 
     function renderPressureDemoMode(data) {
@@ -1586,6 +1635,49 @@ def render_ws_control_page() -> str:
         }
     }
 
+    async function sendAiCoachAction(action, label) {
+        const normalizedAction = String(action || '').trim();
+        if (normalizedAction.length <= 0) {
+            return;
+        }
+
+        const actionButtons = [
+            aiCoachSpeech1Btn,
+            aiCoachSpeech2Btn,
+            aiCoachSpeech3Btn,
+            aiCoachEncourageBtn
+        ];
+        actionButtons.forEach((button) => {
+            button.disabled = true;
+        });
+
+        writeLog(`正在发送 AI 陪练动作：${label}`);
+        try {
+            const response = await fetch('/api/ws/harmony/ai-coach-action', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: normalizedAction })
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`AI 陪练动作发送失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            const data = result.data || {};
+            renderDeviceStatus(Number(data.connectedClients || 0));
+            writeLog(`AI 陪练动作已发送：${data.title || label}，视频 ${data.videoUrl || '未返回'}，音频 ${data.audioFilename || '未返回'}，本次推送 ${Number(data.deliveredCount || 0)} 台设备。`);
+        } catch (error) {
+            writeLog(`AI 陪练动作发送失败：${error}`);
+        } finally {
+            actionButtons.forEach((button) => {
+                button.disabled = false;
+            });
+        }
+    }
+
     refreshBtn.addEventListener('click', async () => {
         await refreshDeviceStatus(false);
         await refreshAiMode(false);
@@ -1661,6 +1753,24 @@ def render_ws_control_page() -> str:
         }
     });
     addAiLibraryBtn.addEventListener('click', addAiCacheToLibrary);
+    aiCoachSpeech1Btn.addEventListener('click', () => {
+        void sendAiCoachAction('speech1', '讲话1');
+    });
+    aiCoachSpeech2Btn.addEventListener('click', () => {
+        void sendAiCoachAction('speech2', '讲话2');
+    });
+    aiCoachSpeech3Btn.addEventListener('click', () => {
+        void sendAiCoachAction('speech3', '讲话3');
+    });
+    aiCoachEncourageBtn.addEventListener('click', () => {
+        void sendAiCoachAction('encourage', '鼓励');
+    });
+    aiModeNormalBtn.addEventListener('click', () => {
+        void switchAiMode('mode1');
+    });
+    aiModeAbnormalBtn.addEventListener('click', () => {
+        void switchAiMode('mode2');
+    });
     postureReadyBtn.textContent = '默认';
     postureRenderBtn.textContent = '渲染';
     postureStep2Btn.textContent = '阶段2';

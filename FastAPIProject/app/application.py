@@ -25,6 +25,7 @@ def create_app() -> FastAPI:
         os.makedirs(settings.cp_library_dir, exist_ok=True)
         os.makedirs(settings.ai_cache_dir, exist_ok=True)
         os.makedirs(settings.ai_library_dir, exist_ok=True)
+        os.makedirs(settings.desktop_media_dir, exist_ok=True)
         app.state.container = container
         yield
 
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     application.mount("/cp_library", StaticFiles(directory=settings.cp_library_dir), name="cp_library")
     application.mount("/ai_cache", StaticFiles(directory=settings.ai_cache_dir), name="ai_cache")
     application.mount("/ai_library", StaticFiles(directory=settings.ai_library_dir), name="ai_library")
+    application.mount("/desktop_media", StaticFiles(directory=settings.desktop_media_dir), name="desktop_media")
     application.include_router(http_router)
     application.include_router(websocket_router)
     return application

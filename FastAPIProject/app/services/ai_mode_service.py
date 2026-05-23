@@ -7,7 +7,7 @@ from app.models.schemas import AiMode, HarmonyAppWebSocketMessage, now_timestamp
 
 class AiModeService:
     def __init__(self) -> None:
-        self._current_mode = AiMode.MODE1
+        self._current_mode = AiMode.MODE2
         self._lock = Lock()
 
     def get_current_mode(self) -> AiMode:
@@ -55,16 +55,20 @@ class AiModeService:
 
     @staticmethod
     def _get_label(mode: AiMode) -> str:
+        if mode == AiMode.MODE1:
+            return "正常"
         if mode == AiMode.MODE2:
-            return "模式2"
+            return "非正常"
         if mode == AiMode.MODE3:
-            return "模式3"
-        return "模式1"
+            return "非正常扩展"
+        return "正常"
 
     @staticmethod
     def _get_description(mode: AiMode) -> str:
+        if mode == AiMode.MODE1:
+            return "正常样本会输出完整的技能加载、脚本执行与标准分析结果。"
         if mode == AiMode.MODE2:
-            return "鸿蒙端按模式2本地文案做模拟流式输出"
+            return "当前默认展示的是非正常样本分析流式输出。"
         if mode == AiMode.MODE3:
-            return "鸿蒙端按模式3本地文案做模拟流式输出"
-        return "鸿蒙端按模式1本地文案做模拟流式输出"
+            return "保留另一组非正常样本流式输出。"
+        return "正常样本会输出完整的技能加载、脚本执行与标准分析结果。"

@@ -58,6 +58,10 @@ class AppSettings:
             "ai_library",
         ),
     )
+    desktop_media_dir: str = os.getenv(
+        "HFOOD_DESKTOP_MEDIA_DIR",
+        os.path.join(os.path.expanduser("~"), "Desktop"),
+    )
     xfyun_account_store_path: str = os.getenv(
         "HFOOD_XFYUN_ACCOUNT_STORE_PATH",
         os.path.join(

@@ -1,6 +1,15 @@
-INFO:     Started server process [29924]
+INFO:     Started server process [23016]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0.0', 8080): [winerror 10048] 通常每个套接字地址(协议/网络地址/端口)只允许使用一次。
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     192.168.110.75:37672 - "WebSocket /ws/harmony-app" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     192.168.110.75:37718 - "WebSocket /ws/harmony-app" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     192.168.110.75:37740 - "WebSocket /ws/harmony-app" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     192.168.110.75:37756 - "WebSocket /ws/harmony-app" [accepted]
+INFO:     connection open
