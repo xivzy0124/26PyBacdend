@@ -1,0 +1,8 @@
+INFO:     Started server process [25748]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:6688 (Press CTRL+C to quit)
+INFO:     192.168.110.253:58537 - "WebSocket /ws/vrm-render/pose/default/renderer" [accepted]
+INFO:     connection open
+INFO:     192.168.110.253:61521 - "WebSocket /ws/vrm-render/signaling/default/renderer" [accepted]
+INFO:     connection open

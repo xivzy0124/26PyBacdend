@@ -2,7 +2,7 @@
 
 import os
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
 from app.container import AppContainer, get_container_from_request
@@ -122,9 +122,9 @@ AI_COACH_ACTION_PRESETS: dict[str, dict[str, object]] = {
         "action": "speech1",
         "title": "讲话1",
         "message": "AI回复中",
-        "mediaKey": "speech",
+        "mediaKey": "speech1",
         "videoFilename": "讲话.mp4",
-        "audioFilename": "重心左偏，建议挥拍时手肘抬高。.mp3",
+        "audioFilename": "好的.mp3",
         "loop": True,
         "returnToIdle": False,
     },
@@ -132,7 +132,7 @@ AI_COACH_ACTION_PRESETS: dict[str, dict[str, object]] = {
         "action": "speech2",
         "title": "讲话2",
         "message": "AI回复中",
-        "mediaKey": "speech",
+        "mediaKey": "speech2",
         "videoFilename": "讲话.mp4",
         "audioFilename": "没问题，现在咱们就开始。现在你试着做一遍完整的挥拍：先转胯带动身体，然后小臂外旋同时往上挥，击球点要在你右前方最高的位置，最后自然收拍贴到左腋下。.mp3",
         "loop": True,
@@ -142,7 +142,7 @@ AI_COACH_ACTION_PRESETS: dict[str, dict[str, object]] = {
         "action": "speech3",
         "title": "讲话3",
         "message": "AI回复中",
-        "mediaKey": "speech",
+        "mediaKey": "speech3",
         "videoFilename": "讲话.mp4",
         "audioFilename": "刚才挥拍时转体的衔接很顺，但随挥动作没有收住，拍子挥得太靠后了。你试着在击球后让小臂带着拍子自然落到左胯位置，而不是甩到身后，这样既能保护肩肘，还能更快回位准备下一拍。.mp3",
         "loop": True,
@@ -154,16 +154,19 @@ AI_COACH_ACTION_PRESETS: dict[str, dict[str, object]] = {
         "message": "播放鼓励示例",
         "mediaKey": "encourage",
         "videoFilename": "鼓励.mp4",
-        "audioFilename": "今天你的手肘角度是8°，比上周改善了2°！再减少1°就能进入安全区！”进步最快的是你的右髋控制能力，连续3次训练都在提升！！！！！.mp3",
+        "audioFilename": "和标准姿势相比，你的右肘角度很好，差不多150度，力量传导很顺畅。不过右肩稍微抬高了点，髋部也没有跟着转过来。.mp3",
         "loop": False,
         "returnToIdle": True,
     },
 }
 
 AI_COACH_MEDIA_FILES: dict[str, str] = {
-    "idle": "常态待机.mp4",
-    "speech": "讲话.mp4",
-    "encourage": "鼓励.mp4",
+    "idle": ("常态待机.mp4", "讲话.mp4"),
+    "speech": ("讲话.mp4",),
+    "speech1": ("讲话1.mp4", "讲话.mp4"),
+    "speech2": ("讲话2.mp4", "讲话.mp4"),
+    "speech3": ("讲话3.mp4", "讲话.mp4"),
+    "encourage": ("鼓励.mp4", "讲话.mp4"),
 }
 
 MPEG1_LAYER3_BITRATES_KBPS: dict[int, int] = {
@@ -229,20 +232,37 @@ async def ws_control_page() -> HTMLResponse:
     return HTMLResponse(render_ws_control_page())
 
 
+def resolve_ai_coach_media_path(media_key: str) -> tuple[str, str]:
+    normalized_key = media_key.strip().lower()
+    candidate_filenames = AI_COACH_MEDIA_FILES.get(normalized_key)
+    if candidate_filenames is None:
+        raise HTTPException(status_code=404, detail=f"unknown ai coach media: {media_key}")
+
+    media_root = os.path.abspath(settings.desktop_media_dir)
+    for filename in candidate_filenames:
+        file_path = os.path.abspath(os.path.join(media_root, filename))
+        if not file_path.startswith(media_root):
+            continue
+        if os.path.exists(file_path):
+            return file_path, filename
+
+    raise HTTPException(
+        status_code=404,
+        detail=f"ai coach media file not found for key: {media_key}",
+    )
+
+
+def build_ai_coach_media_url(request: Request, media_key: str) -> str:
+    try:
+        resolve_ai_coach_media_path(media_key)
+    except HTTPException:
+        return ""
+    return build_public_asset_url(request, f"/api/ai-coach/media/{media_key}")
+
+
 @router.get("/api/ai-coach/media/{media_key}", include_in_schema=False)
 async def get_ai_coach_media(media_key: str) -> FileResponse:
-    normalized_key = media_key.strip().lower()
-    filename = AI_COACH_MEDIA_FILES.get(normalized_key)
-    if filename is None:
-        raise FileNotFoundError(f"unknown ai coach media: {media_key}")
-
-    file_path = os.path.abspath(os.path.join(settings.desktop_media_dir, filename))
-    media_root = os.path.abspath(settings.desktop_media_dir)
-    if not file_path.startswith(media_root):
-        raise FileNotFoundError("invalid ai coach media path")
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"ai coach media file not found: {filename}")
-
+    file_path, filename = resolve_ai_coach_media_path(media_key)
     return FileResponse(path=file_path, media_type="video/mp4", filename=filename)
 
 
@@ -853,7 +873,7 @@ async def notify_ai_coach_action(
     if preset is None:
         return ApiResponse.error(400, f"unsupported ai coach action: {payload.action}")
 
-    video_url = build_public_asset_url(request, f"/api/ai-coach/media/{preset['mediaKey']}")
+    video_url = build_ai_coach_media_url(request, str(preset["mediaKey"]))
     try:
         library_audio = container.ai_online_tts_service.resolve_library_audio_asset(str(preset["audioFilename"]))
     except ValueError as error:
@@ -888,6 +908,7 @@ async def notify_ai_coach_action(
         "action": preset["action"],
         "title": preset["title"],
         "message": preset["message"],
+        "videoMediaKey": preset["mediaKey"],
         "videoUrl": video_url,
         "audioUrl": audio_url,
         "audioFilename": library_audio.filename,
