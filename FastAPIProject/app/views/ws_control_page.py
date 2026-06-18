@@ -285,6 +285,26 @@ def render_ws_control_page() -> str:
             color: var(--warn);
         }
 
+        .mode-pill.off {
+            background: #eef2f7;
+            color: #526075;
+        }
+
+        .mode-pill.blank {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .mode-pill.standing {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .mode-pill.walking {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+
         .mode-pill.unknown {
             background: #eef2f7;
             color: #526075;
@@ -530,6 +550,25 @@ def render_ws_control_page() -> str:
 
                     <article class="card panel">
                         <div>
+                            <h2 class="section-title">蓝牙模拟</h2>
+                            <p class="section-desc">演示兜底：开启后伪造蓝牙已连接并接管蓝牙数据，真实传感器连不上时也能演示。</p>
+                        </div>
+                        <section class="mode-box">
+                            <div class="row">
+                                <span class="mode-pill off" id="bt-sim-mode-pill">关闭模拟</span>
+                            </div>
+                            <p class="section-desc" id="bt-sim-mode-description">关闭模拟，使用真实蓝牙压力数据与连接状态。</p>
+                            <div class="mode-actions">
+                                <button type="button" id="bt-sim-mode-off" class="active-mode">关闭模拟</button>
+                                <button type="button" id="bt-sim-mode-blank">模拟空白</button>
+                                <button type="button" id="bt-sim-mode-standing">模拟站立</button>
+                                <button type="button" id="bt-sim-mode-walking">模拟走路</button>
+                            </div>
+                        </section>
+                    </article>
+
+                    <article class="card panel">
+                        <div>
                             <h2 class="section-title">鸿蒙端 TTS</h2>
                             <p class="section-desc">本地 TTS 独立板块，直接调用设备侧播报能力。</p>
                         </div>
@@ -696,6 +735,8 @@ def render_ws_control_page() -> str:
     const pressureModeDescriptionEl = document.getElementById('pressure-mode-description');
     const traceModePillEl = document.getElementById('trace-mode-pill');
     const traceModeDescriptionEl = document.getElementById('trace-mode-description');
+    const btSimModePillEl = document.getElementById('bt-sim-mode-pill');
+    const btSimModeDescriptionEl = document.getElementById('bt-sim-mode-description');
     const localTtsInputEl = document.getElementById('local-tts-input');
     const sendLocalTtsBtn = document.getElementById('send-local-tts-btn');
     const embeddedTtsInputEl = document.getElementById('embedded-tts-input');
@@ -741,6 +782,12 @@ def render_ws_control_page() -> str:
     const traceModeButtons = {
         normal: document.getElementById('trace-mode-normal'),
         jitter: document.getElementById('trace-mode-jitter')
+    };
+    const btSimModeButtons = {
+        off: document.getElementById('bt-sim-mode-off'),
+        blank: document.getElementById('bt-sim-mode-blank'),
+        standing: document.getElementById('bt-sim-mode-standing'),
+        walking: document.getElementById('bt-sim-mode-walking')
     };
 
     const SHANGHAI_TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
@@ -851,6 +898,22 @@ def render_ws_control_page() -> str:
         traceModeDescriptionEl.textContent = modeDescription;
 
         Object.entries(traceModeButtons).forEach(([key, button]) => {
+            button.classList.toggle('active-mode', key === mode);
+        });
+    }
+
+    function renderBluetoothSimulationMode(data) {
+        const mode = data.mode || 'off';
+        const modeLabel = data.modeLabel || '关闭模拟';
+        const modeDescription = data.modeDescription || '关闭模拟，使用真实蓝牙压力数据与连接状态。';
+
+        btSimModePillEl.textContent = modeLabel;
+        btSimModePillEl.className = Object.prototype.hasOwnProperty.call(btSimModeButtons, mode)
+            ? `mode-pill ${mode}`
+            : 'mode-pill unknown';
+        btSimModeDescriptionEl.textContent = modeDescription;
+
+        Object.entries(btSimModeButtons).forEach(([key, button]) => {
             button.classList.toggle('active-mode', key === mode);
         });
     }
@@ -1024,6 +1087,23 @@ def render_ws_control_page() -> str:
             }
         } catch (error) {
             writeLog(`轨迹模式刷新失败：${error}`);
+        }
+    }
+
+    async function refreshBluetoothSimulationMode(silent = true) {
+        try {
+            const response = await fetch('/api/bluetooth/simulation', {
+                method: 'GET',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            renderBluetoothSimulationMode(result.data || {});
+            if (!silent) {
+                const data = result.data || {};
+                writeLog(`蓝牙模拟已刷新，当前为 ${(data.modeLabel || data.mode || '关闭模拟')}。`);
+            }
+        } catch (error) {
+            writeLog(`蓝牙模拟刷新失败：${error}`);
         }
     }
 
@@ -1213,6 +1293,30 @@ def render_ws_control_page() -> str:
             writeLog(`轨迹模式切换成功：${(result.data && result.data.modeLabel) || mode}`);
         } catch (error) {
             writeLog(`轨迹模式切换失败：${error}`);
+        } finally {
+            buttons.forEach(button => button.disabled = false);
+        }
+    }
+
+    async function switchBluetoothSimulationMode(mode) {
+        const buttons = Object.values(btSimModeButtons);
+        buttons.forEach(button => button.disabled = true);
+        writeLog(`正在切换蓝牙模拟到 ${mode}...`);
+
+        try {
+            const response = await fetch(`/api/bluetooth/simulation?mode=${encodeURIComponent(mode)}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (Number(result.code) !== 200) {
+                writeLog(`蓝牙模拟切换失败：${result.message || '未知错误'}`);
+                return;
+            }
+
+            renderBluetoothSimulationMode(result.data || {});
+            writeLog(`蓝牙模拟切换成功：${(result.data && result.data.modeLabel) || mode}`);
+        } catch (error) {
+            writeLog(`蓝牙模拟切换失败：${error}`);
         } finally {
             buttons.forEach(button => button.disabled = false);
         }
@@ -1805,6 +1909,10 @@ def render_ws_control_page() -> str:
     pressureModeButtons.repair.addEventListener('click', () => switchPressureDemoMode('repair'));
     traceModeButtons.normal.addEventListener('click', () => switchPressureTraceDemoMode('normal'));
     traceModeButtons.jitter.addEventListener('click', () => switchPressureTraceDemoMode('jitter'));
+    btSimModeButtons.off.addEventListener('click', () => switchBluetoothSimulationMode('off'));
+    btSimModeButtons.blank.addEventListener('click', () => switchBluetoothSimulationMode('blank'));
+    btSimModeButtons.standing.addEventListener('click', () => switchBluetoothSimulationMode('standing'));
+    btSimModeButtons.walking.addEventListener('click', () => switchBluetoothSimulationMode('walking'));
 
     renderEmbeddedAudioLibrary();
     renderCvAudioLibrary();
@@ -1817,6 +1925,7 @@ def render_ws_control_page() -> str:
     refreshAiMode(false);
     refreshPressureDemoMode(false);
     refreshPressureTraceDemoMode(false);
+    refreshBluetoothSimulationMode(false);
     refreshEmbeddedOnlineTtsConfig(false);
     refreshEmbeddedAudioLibrary(false);
     refreshCvOnlineTtsConfig(false);
@@ -1829,6 +1938,7 @@ def render_ws_control_page() -> str:
         refreshAiMode(true);
         refreshPressureDemoMode(true);
         refreshPressureTraceDemoMode(true);
+        refreshBluetoothSimulationMode(true);
         updateSendLocalTtsButtonState();
         refreshEmbeddedOnlineTtsConfig(true);
         refreshEmbeddedAudioLibrary(true);

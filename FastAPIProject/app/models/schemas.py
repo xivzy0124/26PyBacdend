@@ -59,6 +59,22 @@ class PressureTraceDemoMode(str, Enum):
         raise ValueError(f"Unsupported pressure trace demo mode: {code}")
 
 
+class BluetoothSimulationMode(str, Enum):
+    OFF = "off"
+    BLANK = "blank"
+    STANDING = "standing"
+    WALKING = "walking"
+
+    @classmethod
+    def from_code(cls, code: str | None) -> "BluetoothSimulationMode":
+        if code is None or code.strip() == "":
+            return cls.OFF
+        for mode in cls:
+            if mode.value == code.strip().lower():
+                return mode
+        raise ValueError(f"Unsupported bluetooth simulation mode: {code}")
+
+
 class ApiResponse(BaseModel):
     code: int
     message: str
@@ -104,6 +120,9 @@ class HarmonyAppWebSocketMessage(BaseModel):
     pressureTraceMode: str | None = None
     pressureTraceModeLabel: str | None = None
     pressureTraceModeDescription: str | None = None
+    bluetoothSimulationMode: str | None = None
+    bluetoothSimulationModeLabel: str | None = None
+    bluetoothSimulationModeDescription: str | None = None
     aiCoachAction: str | None = None
     aiCoachVideoUrl: str | None = None
     aiCoachLoop: bool | None = None
